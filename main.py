@@ -2,7 +2,10 @@ import datetime
 import enum
 import typing
 import pathlib
+import urllib.request
+import collections
 import json
+import matplotlib.pyplot as plt
 import dataclasses as dc
 
 
@@ -15,7 +18,7 @@ class TransactionType(enum.Enum):
 class Transaction:
     type: TransactionType
     ticker: str
-    date: datetime.datetime
+    date: datetime.date
     volume: int
     price_per_share: float
 
@@ -40,7 +43,7 @@ def parse_transaction_file(
                         line_num, 1)
                 )
 
-            date = datetime.datetime.strptime(date_str, r'%m/%d/%Y')
+            date = datetime.datetime.strptime(date_str, r'%m/%d/%Y').date()
             volume = int(volume_str)
             price = float(price_str)
 
@@ -51,6 +54,8 @@ def parse_transaction_file(
                 volume,
                 price,
             ))
+    # Sort by date, ascending
+    transactions.sort(key=lambda t: t.date)
     return transactions
 
 
@@ -58,8 +63,8 @@ def parse_transaction_file(
 class StockStatistic:
     quantity_bought: int = 0
     quantity_sold: int = 0
-    first_buy: typing.Optional[datetime.datetime] = None
-    last_sell: typing.Optional[datetime.datetime] = None
+    first_buy: typing.Optional[datetime.date] = None
+    last_sell: typing.Optional[datetime.date] = None
     starting_capital: float = 0.0
     ending_capital: float = 0.0
 
@@ -84,7 +89,7 @@ class Portfolio:
         # Set of stock tickers in the transactions
         self.stock_tickers: typing.Set[str] = set(t.ticker for t in transactions)
         self.per_stock_stats = self.calc_per_stock_stats()
-        self.stats = self.calc_stats()
+        # self.stats = self.calc_stats()
 
     # TODO: THESE SHOULD BE STAND-ALONE FUNCTIONS
     def calc_per_stock_stats(self) -> typing.Dict[str, StockStatistic]:
@@ -109,51 +114,201 @@ class Portfolio:
             per_stock_stats[transaction.ticker] = stock_stats  # TODO: NECESSARY?
         return per_stock_stats
 
-    def calc_stats(self) -> typing.Dict[str, typing.Any]:
-        # TODO
-        starting_capital: float = 0.0
-        ending_capital: float = 0.0
-        return {}
+    # def calc_stats(self) -> typing.Dict[str, typing.Any]:
+    #     # TODO
+    #     starting_capital: float = 0.0
+    #     ending_capital: float = 0.0
+    #     return {}
 
-    def generate_plot_data(
-            self,
-            start_date: datetime.datetime,
-            end_date: datetime.datetime,
-            period: str = 'WEEK',
-    ) -> typing.Dict[datetime.datetime, float]:
-        for ticker in self.stock_tickers:
-            fetch_stock_data(ticker, start_date, end_date)
-        return {}
+    # def generate_plot_data(
+    #         self,
+    #         start_date: datetime.datetime,
+    #         end_date: datetime.datetime,
+    #         period: str = 'WEEK',
+    # ) -> typing.Dict[str, typing.List[StockDataPoint]]:
+    #     """Returns dict of stock tickers to list of ordered StockDataPoint."""
+    #     for ticker in self.stock_tickers:
+    #         print(fetch_stock_data(ticker, start_date, end_date))
+    #     return {}
 
 
 class StockDataPoint(typing.NamedTuple):
-    date: datetime.datetime
+    day: datetime.date
     open_price: float
     close_price: float
 
 
+class StockPriceHistory(typing.NamedTuple):
+    start_date: datetime.date
+    end_date: datetime.date
+    history: 'collections.OrderedDict[datetime.date, StockDataPoint]'
+
+    
+def read_stock_datafile(
+        filehandle: typing.IO,
+        needs_decode: bool = False,
+        copy_to: typing.Optional[pathlib.Path] = None,
+) -> StockPriceHistory:
+    """Read the provided file handle of csv stock data."""
+    stock_data: 'collections.OrderedDict[datetime.date, StockDataPoint]' = \
+        collections.OrderedDict()
+    csv_data = filehandle.read().decode() if needs_decode else filehandle.read()
+    line_number = 0
+    first_date: typing.Optional[datetime.date] = None
+    prev_date: typing.Optional[datetime.date] = None
+
+    for line in csv_data.split('\n'):
+        line_number += 1
+        # Skip the first line (column names)
+        if line_number == 1:
+            continue
+        else:   
+            cols = line.split(',')
+            # Parse date column
+            date = datetime.datetime.strptime(cols[0], r'%Y-%m-%d').date()
+            
+            # Initialize `first_date` on first line of data
+            if line_number == 2:
+                first_date = date
+
+            # Ensure that data is in-order
+            if prev_date and date <= prev_date:
+                raise ValueError(
+                    'Data error: out-of-order data (lines {}-{})'.format(
+                        line_number - 1,
+                        line_number,
+                    ))
+            # Initialize `prev_date` (will happen on first line of data)
+            elif not prev_date:
+                prev_date = date
+                
+            stock_data[date] = StockDataPoint(
+                date,
+                float(cols[1]),
+                float(cols[4]),
+            )
+            prev_date = date
+
+    last_date = prev_date
+
+    # Optionally write the stock data to the provided file path
+    if copy_to:
+        with open(copy_to, 'w') as out_file:
+            out_file.write(csv_data)
+
+    return StockPriceHistory(
+        first_date, 
+        last_date, 
+        stock_data,
+    )
+
+
 def fetch_stock_data(
         ticker: str,
-        start_date: datetime.datetime,
-        end_date: datetime.datetime,
+        start_date: datetime.date,
+        end_date: datetime.date,
         write_to: typing.Optional[pathlib.Path] = None,
-) -> typing.Dict[datetime.datetime, typing.Tuple[float, float]]:
-    # TOOD: ENFORCE START_DATE, END_DATE ARE BOTH MONDAY?
-    api_url = r'https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period1={unix_start_time}&period2={unix_end_time}&interval=1wk&events=history'.format(
+) -> typing.List[StockDataPoint]:
+    # Create url to download data from. Use Yahoo! public data.
+    api_url = r'https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period1={unix_start_time}&period2={unix_end_time}&interval=1d&events=history'.format(
         ticker=ticker,
         unix_start_time=int(start_date.timestamp()),
         unix_end_time=int(end_date.timestamp()),
     )
-    print(api_url)
+    # Download data to in-memory csv file
+    with urllib.request.urlopen(api_url) as stock_file:
+        return read_stock_datafile(
+            stock_file, 
+            needs_decode=True, 
+            copy_to=write_to,
+        )
 
 
-transaction_file = 'transaction-test.txt'
-transactions = parse_transaction_file(transaction_file)
-print(transactions)
-portfolio = Portfolio(transactions)
-print(portfolio.stock_tickers)
-print(portfolio.calc_per_stock_stats())
-portfolio.generate_plot_data(
-    start_date=datetime.datetime(year=2020, month=3, day=10),
-    end_date=datetime.datetime(year=2020, month=5, day=1),
-)
+def calc_value_over_time(
+        transactions: typing.List[Transaction],
+        stock_data: typing.Dict[str, typing.List[StockDataPoint]],
+        start_date: datetime.date,
+        end_date: datetime.date,
+) -> 'collections.OrderedDict[datetime.date, float]':
+    """NOTE: assumes `transactions` is sorted. `end_date` is inclusive!
+    This method is not hardened against missing/incomplete data."""
+    val_over_time: 'collections.OrderedDict[datetime.date, float]' = {}
+    # Value of sold stocks
+    running_gain: float = 0
+    # Track current holdings: {ticker -> volume}
+    curr_holdings: typing.Dict[str, float] = {}
+    # Index of next transaction to be applied
+    next_transaction_index = 0
+
+    money_in: float = 0
+    money_out: float = 0
+    
+    curr_date = start_date
+
+    while curr_date <= end_date:
+        # Apply any transactions from this day
+        while next_transaction_index < len(transactions) and \
+                transactions[next_transaction_index].date == curr_date:
+            apply_transaction = transactions[next_transaction_index]
+            ticker = apply_transaction.ticker
+
+            # Set holdings to zero (TODO: THIS IS ANNOYING, USE A DEFAULTDICT OR SOMETHING)
+            if apply_transaction.ticker not in curr_holdings:
+                curr_holdings[ticker] = 0
+            
+            if apply_transaction.type == TransactionType.BUY:
+                curr_holdings[ticker] += apply_transaction.volume
+                # running_gain -= apply_transaction.volume * apply_transaction.price_per_share
+                money_in += apply_transaction.volume * apply_transaction.price_per_share
+
+            else:
+                curr_holdings[ticker] -= apply_transaction.volume
+                # cash += apply_transaction.volume * apply_transaction.price_per_share
+                money_out += apply_transaction.volume * apply_transaction.price_per_share
+
+            next_transaction_index += 1
+
+        try:
+            # Calculate value of holdings at day close
+            close_value = \
+                sum(volume * stock_data[ticker].history[curr_date].close_price \
+                        for ticker, volume in curr_holdings.items())
+            print('{}, {}'.format(curr_date, close_value))
+            val_over_time[curr_date] = close_value
+        # Ignore dates that are missing data (e.g. weekends)
+        except KeyError:
+            pass
+        curr_date += datetime.timedelta(days=1)
+    return val_over_time
+    
+
+if __name__ == '__main__':
+    transaction_file = 'transaction-test.txt'
+    transactions = parse_transaction_file(transaction_file)
+    print(transactions)
+    # portfolio = Portfolio(transactions)
+    # print(portfolio.stock_tickers)
+    # print(portfolio.calc_per_stock_stats())
+    # data = fetch_stock_data(
+    #     'NFLX',
+    #     datetime.date(year=2020, month=3, day=10),
+    #     datetime.date(year=2020, month=5, day=2),
+    #     write_to='nflx-data.csv',
+    # )
+    stock_data = {}
+    with open('nflx-data.csv', 'r') as data_file:
+        stock_data['NFLX'] = read_stock_datafile(data_file)
+    with open('aapl-data.csv', 'r') as data_file:
+        stock_data['AAPL'] = read_stock_datafile(data_file)
+    val_over_time = calc_value_over_time(
+        transactions,
+        stock_data,
+        datetime.date(year=2020, month=3, day=10),
+        datetime.date(year=2020, month=5, day=2),
+    )
+    # Plotting
+    fig, ax = plt.subplots()
+    fig.suptitle('Portfolio Value Over Time')
+    ax.plot(val_over_time.keys(), val_over_time.values())
+    # ax.plot(stock_data['NFLX'].history.keys(), [s.open_price for s in stock_data['NFLX'].history.values()])
+    plt.show()
