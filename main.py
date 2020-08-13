@@ -225,6 +225,7 @@ def fetch_stock_data(
 
 
 def calc_value_over_time(
+        starting_cash: float,
         transactions: typing.List[Transaction],
         stock_data: typing.Dict[str, typing.List[StockDataPoint]],
         start_date: datetime.date,
@@ -233,15 +234,14 @@ def calc_value_over_time(
     """NOTE: assumes `transactions` is sorted. `end_date` is inclusive!
     This method is not hardened against missing/incomplete data."""
     val_over_time: 'collections.OrderedDict[datetime.date, float]' = {}
-    # Value of sold stocks
-    running_gain: float = 0
+    cash: float = starting_cash
     # Track current holdings: {ticker -> volume}
     curr_holdings: typing.Dict[str, float] = {}
     # Index of next transaction to be applied
     next_transaction_index = 0
 
-    money_in: float = 0
-    money_out: float = 0
+    # money_in: float = 0
+    # money_out: float = 0
     
     curr_date = start_date
 
@@ -259,18 +259,18 @@ def calc_value_over_time(
             if apply_transaction.type == TransactionType.BUY:
                 curr_holdings[ticker] += apply_transaction.volume
                 # running_gain -= apply_transaction.volume * apply_transaction.price_per_share
-                money_in += apply_transaction.volume * apply_transaction.price_per_share
+                cash -= apply_transaction.volume * apply_transaction.price_per_share
 
             else:
                 curr_holdings[ticker] -= apply_transaction.volume
                 # cash += apply_transaction.volume * apply_transaction.price_per_share
-                money_out += apply_transaction.volume * apply_transaction.price_per_share
+                cash += apply_transaction.volume * apply_transaction.price_per_share
 
             next_transaction_index += 1
 
         try:
             # Calculate value of holdings at day close
-            close_value = \
+            close_value = cash + \
                 sum(volume * stock_data[ticker].history[curr_date].close_price \
                         for ticker, volume in curr_holdings.items())
             print('{}, {}'.format(curr_date, close_value))
@@ -301,6 +301,7 @@ if __name__ == '__main__':
     with open('aapl-data.csv', 'r') as data_file:
         stock_data['AAPL'] = read_stock_datafile(data_file)
     val_over_time = calc_value_over_time(
+        1000,
         transactions,
         stock_data,
         datetime.date(year=2020, month=3, day=10),
@@ -310,5 +311,7 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
     fig.suptitle('Portfolio Value Over Time')
     ax.plot(val_over_time.keys(), val_over_time.values())
+    ax.axhline(1000, color='r', linestyle='--')
+    ax.grid(True)
     # ax.plot(stock_data['NFLX'].history.keys(), [s.open_price for s in stock_data['NFLX'].history.values()])
     plt.show()
