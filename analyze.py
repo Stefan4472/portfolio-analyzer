@@ -6,80 +6,120 @@ import transactions as t
 import stock_data as sd
 
 
-@dc.dataclass
-class StockStatistic:
-    quantity_bought: int = 0
-    quantity_sold: int = 0
-    first_buy: typing.Optional[datetime.date] = None
-    last_sell: typing.Optional[datetime.date] = None
-    starting_capital: float = 0.0
-    ending_capital: float = 0.0
-
-    def calc_abs_return(self) -> float:
-        return self.ending_capital - self.starting_capital
-
-    def calc_percent_return(self) -> float:
-        return self.calc_abs_return() / self.starting_capital
-
-    # NOTE: DOESN'T MAKE SENSE FOR THE TIMEFRAME OF MY INVESTMENTS
-    # def calc_annualized_return(self) -> float:
-    #     return 0.0  # TODO
+class StockStatistic(typing.NamedTuple):
+    start_date: datetime.date
+    end_date: datetime.date
+    quantity_bought: int
+    quantity_sold: int
+    dollars_spent: float
+    ending_capital: float
+    absolute_return: float
+    percent_return: float
+    annualized_return: float
 
 
-# TODO: THIS CLASS ISN'T REALLY NECESSARY
-class Portfolio:
-    def __init__(
-            self,
-            transactions: typing.List[t.Transaction] = None,
-    ):
-        self.transactions = transactions if transactions else []
-        # Set of stock tickers in the transactions
-        self.stock_tickers: typing.Set[str] = set(t.ticker for t in transactions)
-        self.per_stock_stats = self.calc_per_stock_stats()
-        # self.stats = self.calc_stats()
-
-    # TODO: THESE SHOULD BE STAND-ALONE FUNCTIONS
-    def calc_per_stock_stats(self) -> typing.Dict[str, StockStatistic]:
-        per_stock_stats: typing.Dict[str, StockStatistic] = \
-            {ticker: StockStatistic() for ticker in self.stock_tickers}
-        for transaction in self.transactions:
-            stock_stats = per_stock_stats[transaction.ticker]
-            if transaction.type == t.TransactionType.BUY:
-                stock_stats.quantity_bought += transaction.volume
-                stock_stats.starting_capital += \
-                    transaction.volume * transaction.price_per_share
-                if stock_stats.first_buy is None:
-                    stock_stats.first_buy = transaction.date
-            elif transaction.type == t.TransactionType.SELL:
-                stock_stats.quantity_sold += transaction.volume
-                stock_stats.ending_capital += \
-                    transaction.volume * transaction.price_per_share
-                if stock_stats.last_sell is None:
-                    stock_stats.last_sell = transaction.date
-            else:
-                raise ValueError('Programmer error: unsupported TransactionType')
-            per_stock_stats[transaction.ticker] = stock_stats  # TODO: NECESSARY?
-        return per_stock_stats
-
-    # def calc_stats(self) -> typing.Dict[str, typing.Any]:
-    #     # TODO
-    #     starting_capital: float = 0.0
-    #     ending_capital: float = 0.0
-    #     return {}
-
-    # def generate_plot_data(
-    #         self,
-    #         start_date: datetime.datetime,
-    #         end_date: datetime.datetime,
-    #         period: str = 'WEEK',
-    # ) -> typing.Dict[str, typing.List[StockDataPoint]]:
-    #     """Returns dict of stock tickers to list of ordered StockDataPoint."""
-    #     for ticker in self.stock_tickers:
-    #         print(fetch_stock_data(ticker, start_date, end_date))
-    #     return {}
+def create_stock_statistic(
+    start_date: datetime.date,
+    end_date: datetime.date,
+    quantity_bought: int,
+    quantity_sold: int,
+    dollars_spent: float,
+    ending_capital: float,
+) -> StockStatistic:
+    """Factory method to create a `StockStatistic` instance that fills
+    certain fields."""
+    # Calculate approximate number of years in question
+    years_held = (end_date - start_date).days / 365
+    # Calculate returns. Annualized formula from 
+    # https://www.fool.com/knowledge-center/how-to-calculate-annualized-holding-period-return.aspx
+    abs_return = ending_capital - dollars_spent
+    percent_return = abs_return / dollars_spent
+    annualized_return = \
+        (1 + percent_return) ** (1 / years_held) - 1
+    return StockStatistic(
+        start_date,
+        end_date,
+        quantity_bought,
+        quantity_sold,
+        dollars_spent,
+        ending_capital,
+        abs_return,
+        percent_return,
+        annualized_return,
+    )
 
 
+def calc_stock_statistic(
+        ticker: str,
+        transactions: typing.List[t.Transaction],
+        stock_data: typing.Dict[str, typing.List[sd.StockDataPoint]],
+        start_date: datetime.date,
+        end_date: datetime.date,
+) -> StockStatistic:
+    """Calculate and return `StockStatistic` instance, given a list of
+    Transactions, *all of the same, specified `ticker`*.
 
+    - `start_date` and `end_date` are inclusive
+    - `end_date` must be a valid trading day, and be represented in the 
+      `stock_data` dict
+    """
+    quantity_bought = 0
+    quantity_sold = 0
+    dollars_invested = 0
+    dollars_sold = 0
+
+    for transaction in transactions:
+        if transaction.ticker != ticker:
+            raise ValueError('A transaction didn\'t match the specified ticker')
+        # Ignore transactions that occurred outside the `start`-`end` window
+        if transaction.date < start_date or transaction.date > end_date:
+            continue
+        if transaction.type == t.TransactionType.BUY:
+            quantity_bought += transaction.volume
+            dollars_invested += transaction.volume * transaction.price_per_share
+        elif transaction.type == t.TransactionType.SELL:
+            quantity_sold += transaction.volume
+            dollars_sold += transaction.volume * transaction.price_per_share
+        else:
+            raise ValueError('Programmer error: unsupported TransactionType')
+    
+    # Calculate value of remaining holdings on `end_date`
+    quantity_remaining = quantity_bought - quantity_sold
+    value_remaining = \
+        quantity_remaining * stock_data[ticker].history[end_date].close_price
+    ending_capital = dollars_sold + value_remaining
+
+    return create_stock_statistic(
+        start_date,
+        end_date,
+        quantity_bought,
+        quantity_sold,
+        dollars_invested,
+        ending_capital,
+    )
+
+
+def calc_per_stock_stats(
+        transactions: typing.List[t.Transaction],
+        stock_data: typing.Dict[str, typing.List[sd.StockDataPoint]],
+        start_date: datetime.date,
+        end_date: datetime.date,
+) -> typing.Dict[str, StockStatistic]:
+    # Map each ticker to a list of its transactions. Default to empty list.
+    per_stock_transactions: typing.Dict[str, typing.List[t.Transaction]] = \
+        collections.defaultdict(list)
+    for transaction in transactions:
+        per_stock_transactions[transaction.ticker].append(transaction)
+    # Run `calc_stock_statistics` on each transaction list
+    return {
+        ticker: calc_stock_statistic(
+            ticker,
+            per_stock_transactions[ticker],
+            stock_data,
+            start_date,
+            end_date
+        ) for ticker in per_stock_transactions.keys()
+    }
 
 
 def calc_value_over_time(
@@ -89,8 +129,12 @@ def calc_value_over_time(
         start_date: datetime.date,
         end_date: datetime.date,
 ) -> 'collections.OrderedDict[datetime.date, float]':
-    """NOTE: assumes `transactions` is sorted. `end_date` is inclusive!
-    This method is not hardened against missing/incomplete data."""
+    """Calculates the value of the portfolio at every trading day between
+    `start_date` and `end_date` (inclusive).
+
+    NOTE: assumes `transactions` is sorted by date, ascending.
+    This method is not hardened against missing/incomplete data.
+    """
     # Map date to portfolio value. Dates will be indexed in ascending order.
     # By using the OrderedDict, we can then iterate over the keys in-order.
     val_over_time: 'collections.OrderedDict[datetime.date, float]' = {}

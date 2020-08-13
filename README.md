@@ -4,3 +4,4 @@ Simple python script to visualize stock portfolio performance over time and to p
 # Required Packages
 matplotlib
 dataclasses
+click

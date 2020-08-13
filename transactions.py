@@ -53,3 +53,9 @@ def parse_transaction_file(
     # Sort by date, ascending
     transactions.sort(key=lambda t: t.date)
     return transactions
+
+
+def get_unique_tickers(
+        transactions: typing.List[Transaction],
+) -> typing.Set[str]:
+    return set(t.ticker for t in transactions)
