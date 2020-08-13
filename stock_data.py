@@ -1,6 +1,7 @@
 import datetime
 import typing
 import pathlib
+import time
 import urllib.request
 import collections
 import transactions as t
@@ -83,11 +84,15 @@ def fetch_stock_data(
         end_date: datetime.date,
         write_to: typing.Optional[pathlib.Path] = None,
 ) -> typing.List[StockDataPoint]:
+    """Fetch and parse data for the specified ticker. `end_date` inclusive!"""
+    # Add one day to the `end` date in order for the API to correctly return
+    # result *up until* midnight on the next day.
+    end_inclusive = end_date + datetime.timedelta(days=1)
     # Create url to download data from. Use Yahoo! public data.
     api_url = r'https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period1={unix_start_time}&period2={unix_end_time}&interval=1d&events=history'.format(
         ticker=ticker,
-        unix_start_time=int(start_date.timestamp()),
-        unix_end_time=int(end_date.timestamp()),
+        unix_start_time=int(time.mktime(start_date.timetuple())),
+        unix_end_time=int(time.mktime(end_inclusive.timetuple())),
     )
     # Download data to in-memory csv file
     with urllib.request.urlopen(api_url) as stock_file:
@@ -96,3 +101,21 @@ def fetch_stock_data(
             needs_decode=True, 
             copy_to=write_to,
         )
+
+
+def fetch_all_data(
+        tickers: typing.Set[str],
+        start_date: datetime.date,
+        end_date: datetime.date,
+        write_to_dir: typing.Optional[pathlib.Path] = None,
+) -> typing.Dict[str, typing.List[StockDataPoint]]:
+    """Fetch and parse data for the specified tickers."""
+    data: typing.Dict[str, typing.List[StockDataPoint]] = {}
+    for ticker in tickers:
+        data[ticker] = fetch_stock_data(
+            ticker,
+            start_date,
+            end_date,
+            write_to_dir / (ticker + '-data.csv') if write_to_dir else None,
+        )
+    return data
