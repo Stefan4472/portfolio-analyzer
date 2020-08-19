@@ -83,8 +83,11 @@ def fetch_stock_data(
         start_date: datetime.date,
         end_date: datetime.date,
         write_to: typing.Optional[pathlib.Path] = None,
+        quiet: bool = False,
 ) -> typing.List[StockDataPoint]:
     """Fetch and parse data for the specified ticker. `end_date` inclusive!"""
+    if not quiet:
+        print('Fetching stock data for {}...'.format(ticker))
     # Add one day to the `end` date in order for the API to correctly return
     # result *up until* midnight on the next day.
     end_inclusive = end_date + datetime.timedelta(days=1)
@@ -108,6 +111,7 @@ def fetch_all_data(
         start_date: datetime.date,
         end_date: datetime.date,
         write_to_dir: typing.Optional[pathlib.Path] = None,
+        quiet: bool = False,
 ) -> typing.Dict[str, typing.List[StockDataPoint]]:
     """Fetch and parse data for the specified tickers."""
     data: typing.Dict[str, typing.List[StockDataPoint]] = {}
@@ -117,5 +121,6 @@ def fetch_all_data(
             start_date,
             end_date,
             write_to_dir / (ticker + '-data.csv') if write_to_dir else None,
+            quiet=quiet
         )
     return data

@@ -18,6 +18,7 @@ import plot
 @click.option('-s', '--start_date', type=click.DateTime((r'%Y-%m-%d',)))
 @click.option('-e', '--end_date', type=click.DateTime((r'%Y-%m-%d',)))
 @click.option('-h', '--hypotheticals', type=click.Path(exists=True), multiple=True)
+@click.option('--quiet', type=bool, default=False)
 def run(
         starting_cash: float,
         transaction_file: str,
@@ -25,6 +26,7 @@ def run(
         start_date: datetime.datetime = None,
         end_date: datetime.datetime = None,
         hypotheticals: typing.Tuple[str] = None,
+        quiet: bool = False,
 ):
     """
     Note: ideally, we would make '-s' AND '-e' required, or neither.
@@ -65,6 +67,7 @@ def run(
         start_date,
         end_date,
         write_to_dir=pathlib.Path(save_dir),
+        quiet=quiet
     )
 
     # Calculate statistics for the main portfolio
