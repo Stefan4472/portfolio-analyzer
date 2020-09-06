@@ -166,10 +166,9 @@ def calc_value_over_time(
 
         # Calculate value of holdings at day close
         try:
-            close_value = cash + \
+            val_over_time[curr_date] = cash + \
                 sum(volume * stock_data[ticker].history[curr_date].close_price \
                         for ticker, volume in curr_holdings.items())
-            val_over_time[curr_date] = close_value
         # Ignore KeyErrors, which indicate that at least one of the stocks is 
         # missing data for this date (e.g. on a weekend).
         # NOTE: if the data is expected to be irregular, a better mechanism
