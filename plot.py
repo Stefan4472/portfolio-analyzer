@@ -31,6 +31,9 @@ def create_portfolio_plot(
     ax.tick_params(axis='x', labelrotation=20)
     # Place legend to the upper right, outside the plot:
     # https://stackoverflow.com/a/43832425
-    fig.legend(loc=(0.9, 0.9))
-
+    # if len(portfolios_to_plot) == 1:
+    #     fig.legend()
+    # else:
+    #     fig.legend(loc=(0.8, 0.7))
+    fig.legend()
     return fig, ax

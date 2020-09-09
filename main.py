@@ -69,8 +69,8 @@ def run(
         portfolio_path.mkdir(exist_ok=True)
 
         # Calculate statistics for each stock holding in the portfolio
-        per_stock_stats = an.calc_per_stock_stats(
-            portfolio.transactions,
+        per_stock_stats = portfolio.calc_statistics(
+            starting_cash,
             start_date.date(),
             end_date.date(),
             stock_data_cache,
@@ -93,9 +93,8 @@ def run(
 
         # Calculate portfolio value for every day between `start_date` and
         # `end_date`, inclusive
-        val_over_time = an.calc_value_over_time(
+        val_over_time = portfolio.calc_value_over_time(
             starting_cash,
-            portfolio.transactions,
             start_date.date(),
             end_date.date(),
             stock_data_cache,
@@ -110,7 +109,7 @@ def run(
 
         # Add to mapping
         all_history[portfolio.name] = val_over_time
-        
+
         # Draw and save plot
         fig, ax = plot.create_portfolio_plot(
             starting_cash,
@@ -119,6 +118,9 @@ def run(
         )
         fig.savefig(portfolio_path / (portfolio.name + '.jpg'), bbox_inches='tight')
 
+    # TODO: BEST PRACTICE FOR PRINTING TO CONSOLE?
+    if not quiet:
+        print('Plotting comparisons...')
 
     # Create one plot with all portfolios
     fig, ax = plot.create_portfolio_plot(
@@ -127,6 +129,9 @@ def run(
         all_history.keys()
     )
     fig.savefig(save_path / 'portfolio-comparison.jpg', bbox_inches='tight')
+
+    if not quiet:
+        print('Done')
 
 
 if __name__ == '__main__':

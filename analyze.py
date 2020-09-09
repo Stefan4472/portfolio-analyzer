@@ -64,6 +64,7 @@ class StockStatistic(typing.NamedTuple):
 
 def calc_stock_statistic(
         ticker: str,
+        starting_cash: float,
         transactions: typing.List[t.Transaction],
         start_date: datetime.date,
         end_date: datetime.date,
@@ -90,9 +91,13 @@ def calc_stock_statistic(
         if transaction.type == t.TransactionType.BUY:
             quantity_bought += transaction.volume
             dollars_invested += transaction.volume * transaction.price_per_share
+            if dollars_invested > starting_cash:
+                raise ValueError('Not enough money for transaction {}'.format(transaction))
         elif transaction.type == t.TransactionType.SELL:
             quantity_sold += transaction.volume
             dollars_sold += transaction.volume * transaction.price_per_share
+            if quantity_sold > quantity_bought:
+                raise ValueError('Not enough holdings to sell for transaction {}'.format(transaction))
         else:
             raise ValueError('Programmer error: unsupported TransactionType')
     
@@ -113,6 +118,7 @@ def calc_stock_statistic(
 
 def calc_per_stock_stats(
         transactions: typing.List[t.Transaction],
+        starting_cash: float,
         start_date: datetime.date,
         end_date: datetime.date,
         stock_data_cache: sd.StockDataCache,
@@ -126,6 +132,7 @@ def calc_per_stock_stats(
     return {
         ticker: calc_stock_statistic(
             ticker,
+            starting_cash,
             per_stock_transactions[ticker],
             start_date,
             end_date,

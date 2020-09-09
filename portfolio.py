@@ -17,7 +17,7 @@ class Portfolio:
         # Sort by date, ascending
         self.transactions = sorted(transactions, key=lambda t: t.date)
 
-    def calc_val_over_time(
+    def calc_value_over_time(
             self,
             starting_cash: float,
             start_date: datetime.date,
@@ -34,12 +34,14 @@ class Portfolio:
 
     def calc_statistics(
             self,
+            starting_cash: float,
             start_date: datetime.date,
             end_date: datetime.date,
             stock_data_cache: sd.StockDataCache,
     ) -> typing.Dict[str, an.StockStatistic]:
         return an.calc_per_stock_stats(
             self.transactions,
+            starting_cash,
             start_date,
             end_date,
             stock_data_cache,
