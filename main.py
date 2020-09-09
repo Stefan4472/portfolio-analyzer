@@ -68,20 +68,28 @@ def run(
         portfolio_path = save_path / portfolio.name
         portfolio_path.mkdir(exist_ok=True)
 
+        # Calculate statistics for each stock holding in the portfolio
         per_stock_stats = an.calc_per_stock_stats(
             portfolio.transactions,
             start_date.date(),
             end_date.date(),
             stock_data_cache,
         )
-        # Print stats to console.
-        print('Stock Stats')
-        for ticker, stats in per_stock_stats.items():
-            print('{}: {}'.format(ticker, stats))
-        # Write to file
+
+        # Write stats to file, ordered by annualized return
         with open(portfolio_path / 'stats.json', 'w') as out_file:
-            out_file.write('Hello world')
-            # json.dump(stock_stats, out_file, indent=4, default=str)
+            # Sort items ascending by annualized return
+            sorted_stats = sorted(
+                per_stock_stats.items(), 
+                key=lambda s: s[1].annualized_return, 
+                reverse=True,
+            )
+            # Construct OrderedDict mapping ticker to stats-JSON 
+            stats_json = collections.OrderedDict()
+            for ticker, stats in sorted_stats:
+                stats_json[ticker] = stats.to_json()
+            # Write out
+            json.dump(stats_json, out_file, indent=4, default=str)
 
         # Calculate portfolio value for every day between `start_date` and
         # `end_date`, inclusive
@@ -93,9 +101,6 @@ def run(
             stock_data_cache,
         )
 
-        # Add to mapping
-        all_history[portfolio.name] = val_over_time
-        
         # Write out value-over-time
         out_path = portfolio_path / (portfolio.name + '.csv')
         with open(out_path, 'w') as vals_out:
@@ -103,6 +108,9 @@ def run(
             for date, value in val_over_time.items():
                 vals_out.write('{},{}\n'.format(date, value))
 
+        # Add to mapping
+        all_history[portfolio.name] = val_over_time
+        
         # Draw and save plot
         fig, ax = plot.create_portfolio_plot(
             starting_cash,
@@ -110,13 +118,15 @@ def run(
             set([portfolio.name,]),
         )
         fig.savefig(portfolio_path / (portfolio.name + '.jpg'), bbox_inches='tight')
-    return
+
+
+    # Create one plot with all portfolios
     fig, ax = plot.create_portfolio_plot(
         starting_cash,
-        all_vals_over_time,
-        all_vals_over_time.keys()
+        all_history,
+        all_history.keys()
     )
-    fig.savefig(pathlib.Path(save_dir) / 'portfolio-comparison.jpg', bbox_inches='tight')
+    fig.savefig(save_path / 'portfolio-comparison.jpg', bbox_inches='tight')
 
 
 if __name__ == '__main__':

@@ -11,8 +11,6 @@ def create_portfolio_plot(
         portfolios_to_plot: typing.Set[str],
         title: str = 'Portfolio Value Over Time',
 ) -> typing.Tuple['matplotlib.figure.Figure', 'matplotlib.axes._subplots.AxesSubplot']:
-    print(vals_over_time)
-    print(portfolios_to_plot)
     # Note: I'm not sure how to properly type-hint the Pyplot `fig, ax` values
     fig, ax = matplotlib.pyplot.subplots()
     fig.suptitle(title)
@@ -33,6 +31,6 @@ def create_portfolio_plot(
     ax.tick_params(axis='x', labelrotation=20)
     # Place legend to the upper right, outside the plot:
     # https://stackoverflow.com/a/43832425
-    fig.legend(loc='upper right', bbox_to_anchor=(0.5, -0.05))
+    fig.legend(loc=(0.9, 0.9))
 
     return fig, ax

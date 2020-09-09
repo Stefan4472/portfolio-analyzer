@@ -61,7 +61,6 @@ class Portfolio:
 
         # TODO: ARE THESE PARSED IN-ORDER? CAN WE TELL THE USER THE INDEX OF THE TRANSACTION THAT FAILED?
         for transaction_json in json_dict['transactions']:
-            print(transaction_json)
             # TODO: USE JSONSCHEMA
             if 'date' not in transaction_json:
                 raise ValueError('Transaction missing "date" field')

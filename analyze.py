@@ -6,6 +6,7 @@ import transactions as t
 import stock_data as sd
 
 
+# TODO: START_DATE, END_DATE NEEDED/USEFUL?
 class StockStatistic(typing.NamedTuple):
     start_date: datetime.date
     end_date: datetime.date
@@ -17,6 +18,18 @@ class StockStatistic(typing.NamedTuple):
     percent_return: float
     annualized_return: float
 
+    def to_json(self) -> typing.Dict[str, typing.Any]:
+        """Creates formatted json dict."""
+        return {
+            'shares_bought': self.quantity_bought,
+            'shares_sold': self.quantity_sold,
+            'dollars_spent': self.dollars_spent,
+            'ending_capital': self.ending_capital,
+            'absolute_return': self.absolute_return,
+            'percent_return': self.percent_return,
+            'annualized_return': self.annualized_return,
+        }
+    
     @staticmethod
     def create(
             start_date: datetime.date,
@@ -165,11 +178,12 @@ def calc_value_over_time(
 
         # Calculate value of holdings at day close
         try:
-            val_over_time[curr_date] = cash
+            val_today = cash
             for ticker in curr_holdings:
                 volume = curr_holdings[ticker]
                 value = stock_data_cache.get_data(ticker).history[curr_date].close_price
-                val_over_time[curr_date] +=  volume * value
+                val_today +=  volume * value
+            val_over_time[curr_date] = val_today
         # Ignore KeyErrors, which indicate that at least one of the stocks is 
         # missing data for this date (e.g. on a weekend).
         # NOTE: if the data is expected to be irregular, a better mechanism
