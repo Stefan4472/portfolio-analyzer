@@ -60,14 +60,13 @@ def run(
     data_path = save_path / 'stock-data'
     data_path.mkdir(exist_ok=True)
 
-    # Fetch data for the needed stock tickers and save to `data_path`
-    stock_data = sd.fetch_all_data(
-        stock_tickers,
-        start_date,
+    # Create cache
+    stock_data = sd.StockDataCache(
+        start_date, 
         end_date,
         write_to_dir=data_path,
-        quiet=quiet
-    )
+        quiet=quiet,
+    ) 
 
     # Map filepath to value-over-time OrderedDict
     all_vals_over_time: \

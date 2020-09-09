@@ -84,7 +84,7 @@ def fetch_stock_data(
         end_date: datetime.date,
         write_to: typing.Optional[pathlib.Path] = None,
         quiet: bool = False,
-) -> typing.List[StockDataPoint]:
+) -> StockPriceHistory:
     """Fetch and parse data for the specified ticker. `end_date` inclusive!"""
     if not quiet:
         print('Fetching stock data for {}...'.format(ticker))
@@ -106,21 +106,37 @@ def fetch_stock_data(
         )
 
 
-def fetch_all_data(
-        tickers: typing.Set[str],
-        start_date: datetime.date,
-        end_date: datetime.date,
-        write_to_dir: typing.Optional[pathlib.Path] = None,
-        quiet: bool = False,
-) -> typing.Dict[str, typing.List[StockDataPoint]]:
-    """Fetch and parse data for the specified tickers."""
-    data: typing.Dict[str, typing.List[StockDataPoint]] = {}
-    for ticker in tickers:
-        data[ticker] = fetch_stock_data(
-            ticker,
-            start_date,
-            end_date,
-            write_to_dir / (ticker + '-data.csv') if write_to_dir else None,
-            quiet=quiet
-        )
-    return data
+class StockDataCache:
+    """Note: Helper, but all data must be in `start_date`, `end_date`"""
+    def __init__(
+            self,
+            start_date: datetime.date,
+            end_date: datetime.date,
+            write_to_dir: typing.Optional[pathlib.Path] = None,
+            quiet: bool = False,
+    ):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.write_to_dir = write_to_dir
+        self.quiet = quiet
+        self.cache: typing.Dict[str, StockPriceHistory] = {}
+
+    def get_data(
+            self,
+            ticker: str,
+    ) -> StockPriceHistory:
+        if ticker not in self.cache:
+            self.cache[ticker] = fetch_stock_data(
+                ticker,
+                self.start_date,
+                self.end_date,
+                write_to=self.write_to_dir / (ticker + '-data.csv') if self.write_to_dir else None,
+                quiet=self.quiet,
+            )
+        return self.cache[ticker]
+
+    def __getitem__(
+            self, 
+            key: str,
+    ) -> StockPriceHistory:
+        return self.get_data(key)
