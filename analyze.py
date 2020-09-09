@@ -17,44 +17,44 @@ class StockStatistic(typing.NamedTuple):
     percent_return: float
     annualized_return: float
 
-
-def create_stock_statistic(
-    start_date: datetime.date,
-    end_date: datetime.date,
-    quantity_bought: int,
-    quantity_sold: int,
-    dollars_spent: float,
-    ending_capital: float,
-) -> StockStatistic:
-    """Factory method to create a `StockStatistic` instance that fills
-    certain fields."""
-    # Calculate approximate number of years in question
-    years_held = (end_date - start_date).days / 365
-    # Calculate returns. Annualized formula from 
-    # https://www.fool.com/knowledge-center/how-to-calculate-annualized-holding-period-return.aspx
-    abs_return = ending_capital - dollars_spent
-    percent_return = abs_return / dollars_spent
-    annualized_return = \
-        (1 + percent_return) ** (1 / years_held) - 1
-    return StockStatistic(
-        start_date,
-        end_date,
-        quantity_bought,
-        quantity_sold,
-        dollars_spent,
-        ending_capital,
-        abs_return,
-        percent_return,
-        annualized_return,
-    )
+    @staticmethod
+    def create(
+            start_date: datetime.date,
+            end_date: datetime.date,
+            quantity_bought: int,
+            quantity_sold: int,
+            dollars_spent: float,
+            ending_capital: float,
+    ) -> 'StockStatistic':
+        """Factory method to create a `StockStatistic` instance that fills
+        certain fields."""
+        # Calculate approximate number of years in question
+        years_held = (end_date - start_date).days / 365
+        # Calculate returns. Annualized formula from 
+        # https://www.fool.com/knowledge-center/how-to-calculate-annualized-holding-period-return.aspx
+        abs_return = ending_capital - dollars_spent
+        percent_return = abs_return / dollars_spent
+        annualized_return = \
+            (1 + percent_return) ** (1 / years_held) - 1
+        return StockStatistic(
+            start_date,
+            end_date,
+            quantity_bought,
+            quantity_sold,
+            dollars_spent,
+            ending_capital,
+            abs_return,
+            percent_return,
+            annualized_return,
+        )
 
 
 def calc_stock_statistic(
         ticker: str,
         transactions: typing.List[t.Transaction],
-        stock_data: typing.Dict[str, typing.List[sd.StockDataPoint]],
         start_date: datetime.date,
         end_date: datetime.date,
+        stock_data_cache: sd.StockDataCache,
 ) -> StockStatistic:
     """Calculate and return `StockStatistic` instance, given a list of
     Transactions, *all of the same, specified `ticker`*.
@@ -85,11 +85,10 @@ def calc_stock_statistic(
     
     # Calculate value of remaining holdings on `end_date`
     quantity_remaining = quantity_bought - quantity_sold
-    value_remaining = \
-        quantity_remaining * stock_data[ticker].history[end_date].close_price
-    ending_capital = dollars_sold + value_remaining
+    value = stock_data_cache.get_data(ticker).history[end_date].close_price
+    ending_capital = dollars_sold + quantity_remaining * value
 
-    return create_stock_statistic(
+    return StockStatistic.create(
         start_date,
         end_date,
         quantity_bought,
@@ -101,13 +100,13 @@ def calc_stock_statistic(
 
 def calc_per_stock_stats(
         transactions: typing.List[t.Transaction],
-        stock_data: typing.Dict[str, typing.List[sd.StockDataPoint]],
         start_date: datetime.date,
         end_date: datetime.date,
+        stock_data_cache: sd.StockDataCache,
 ) -> typing.Dict[str, StockStatistic]:
     # Map each ticker to a list of its transactions. Default to empty list.
-    per_stock_transactions: typing.Dict[str, typing.List[t.Transaction]] = \
-        collections.defaultdict(list)
+    per_stock_transactions: \
+        typing.Dict[str, typing.List[t.Transaction]] = collections.defaultdict(list)
     for transaction in transactions:
         per_stock_transactions[transaction.ticker].append(transaction)
     # Run `calc_stock_statistics` on each transaction list
@@ -115,9 +114,9 @@ def calc_per_stock_stats(
         ticker: calc_stock_statistic(
             ticker,
             per_stock_transactions[ticker],
-            stock_data,
             start_date,
-            end_date
+            end_date,
+            stock_data_cache,
         ) for ticker in per_stock_transactions.keys()
     }
 
@@ -125,9 +124,9 @@ def calc_per_stock_stats(
 def calc_value_over_time(
         starting_cash: float,
         transactions: typing.List[t.Transaction],
-        stock_data: typing.Dict[str, typing.List[sd.StockDataPoint]],
         start_date: datetime.date,
         end_date: datetime.date,
+        stock_data_cache: sd.StockDataCache,
 ) -> 'collections.OrderedDict[datetime.date, float]':
     """Calculates the value of the portfolio at every trading day between
     `start_date` and `end_date` (inclusive).
@@ -141,7 +140,7 @@ def calc_value_over_time(
     # Cash-on-hand
     cash: float = starting_cash
     # Track current stock holdings: {ticker -> volume}. Default to zero.
-    curr_holdings: typing.Dict[str, float] = collections.defaultdict(lambda: 0)
+    curr_holdings: typing.Dict[str, int] = collections.defaultdict(lambda: 0)
     # Index of next transaction to be applied
     next_transaction_index = 0
     # Date being analyzed
@@ -166,9 +165,11 @@ def calc_value_over_time(
 
         # Calculate value of holdings at day close
         try:
-            val_over_time[curr_date] = cash + \
-                sum(volume * stock_data[ticker].history[curr_date].close_price \
-                        for ticker, volume in curr_holdings.items())
+            val_over_time[curr_date] = cash
+            for ticker in curr_holdings:
+                volume = curr_holdings[ticker]
+                value = stock_data_cache.get_data(ticker).history[curr_date].close_price
+                val_over_time[curr_date] +=  volume * value
         # Ignore KeyErrors, which indicate that at least one of the stocks is 
         # missing data for this date (e.g. on a weekend).
         # NOTE: if the data is expected to be irregular, a better mechanism

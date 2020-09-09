@@ -1,7 +1,10 @@
 import json
 import datetime
+import collections
 import typing
 import transactions as tr
+import stock_data as sd
+import analyze as an
 
 
 class Portfolio:
@@ -11,7 +14,36 @@ class Portfolio:
         transactions: typing.List[tr.Transaction],
     ):
         self.name = name
-        self.transactions = transactions
+        # Sort by date, ascending
+        self.transactions = sorted(transactions, key=lambda t: t.date)
+
+    def calc_val_over_time(
+            self,
+            starting_cash: float,
+            start_date: datetime.date,
+            end_date: datetime.date,
+            stock_data_cache: sd.StockDataCache,
+    ) -> sd.StockPriceHistory:
+        return an.calc_value_over_time(
+            starting_cash,
+            self.transactions,
+            start_date,
+            end_date,
+            stock_data_cache,
+        )
+
+    def calc_statistics(
+            self,
+            start_date: datetime.date,
+            end_date: datetime.date,
+            stock_data_cache: sd.StockDataCache,
+    ) -> typing.Dict[str, an.StockStatistic]:
+        return an.calc_per_stock_stats(
+            self.transactions,
+            start_date,
+            end_date,
+            stock_data_cache,
+        )
 
     @staticmethod
     def from_json(json_dict: typing.Dict[str, typing.Any]) -> 'Portfolio':
@@ -73,9 +105,8 @@ class Portfolio:
                 transaction_json['volume'],
                 transaction_json['price'],
             ))
-        # Sort by date, ascending
-        transactions.sort(key=lambda t: t.date)
-        return transactions
+        
+        return Portfolio(name, transactions)
 
 
 if __name__ == '__main__':
