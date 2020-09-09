@@ -1,0 +1,236 @@
+{
+  "name": "My Portfolio",
+  "transactions": [
+    {
+      "date": "3/17/2020",
+      "ticker": "NFLX",
+      "type": "BUY",
+      "volume": 1,
+      "price": 306.07
+    },
+    {
+      "date": "3/17/2020",
+      "ticker": "AAPL",
+      "type": "BUY",
+      "volume": 4,
+      "price": 68.91
+    },
+    {
+      "date": "3/17/2020",
+      "ticker": "MSFT",
+      "type": "BUY",
+      "volume": 2,
+      "price": 277.60
+    },
+    {
+      "date": "3/17/2020",
+      "ticker": "SBUX",
+      "type": "BUY",
+      "volume": 2,
+      "price": 59.50
+    },
+    {
+      "date": "3/24/2020",
+      "ticker": "CSCO",
+      "type": "BUY",
+      "volume": 5,
+      "price": 37.00
+    },
+    {
+      "date": "3/24/2020",
+      "ticker": "COST",
+      "type": "BUY",
+      "volume": 1,
+      "price": 292.92
+    },
+    {
+      "date": "3/24/2020",
+      "ticker": "PYPL",
+      "type": "BUY",
+      "volume": 3,
+      "price": 89.51
+    },
+    {
+      "date": "3/24/2020",
+      "ticker": "INTC",
+      "type": "BUY",
+      "volume": 4,
+      "price": 53.00
+    },
+    {
+      "date": "3/24/2020",
+      "ticker": "MSFT",
+      "type": "BUY",
+      "volume": 2,
+      "price": 143.33
+    },
+    {
+      "date": "3/24/2020",
+      "ticker": "AAPL",
+      "type": "BUY",
+      "volume": 4,
+      "price": 59.33
+    },
+    {
+      "date": "3/24/2020",
+      "ticker": "SBUX",
+      "type": "BUY",
+      "volume": 1,
+      "price": 62.88
+    },
+    {
+      "date": "3/30/2020",
+      "ticker": "JNJ",
+      "type": "BUY",
+      "volume": 2,
+      "price": 128.64
+    },
+    {
+      "date": "4/1/2020",
+      "ticker": "NFLX",
+      "type": "SELL",
+      "volume": 1,
+      "price": 378.16
+    },
+    {
+      "date": "4/3/2020",
+      "ticker": "ADP",
+      "type": "BUY",
+      "volume": 2,
+      "price": 132.16
+    },
+    {
+      "date": "4/3/2020",
+      "ticker": "JNJ",
+      "type": "BUY",
+      "volume": 1,
+      "price": 133.84
+    },
+    {
+      "date": "4/3/2020",
+      "ticker": "CSCO",
+      "type": "BUY",
+      "volume": 5,
+      "price": 40.16
+    },
+    {
+      "date": "4/3/2020",
+      "ticker": "SBUX",
+      "type": "BUY",
+      "volume": 2,
+      "price": 63.56
+    },
+    {
+      "date": "4/6/2020",
+      "ticker": "MSFT",
+      "type": "BUY",
+      "volume": 1,
+      "price": 160.40
+    },
+    {
+      "date": "4/6/2020",
+      "ticker": "AAPL",
+      "type": "BUY",
+      "volume": 4,
+      "price": 63.40
+    },
+    {
+      "date": "4/6/2020",
+      "ticker": "CSCO",
+      "type": "BUY",
+      "volume": 4,
+      "price": 40.63
+    },
+    {
+      "date": "4/6/2020",
+      "ticker": "VGT",
+      "type": "BUY",
+      "volume": 1,
+      "price": 213.41
+    },
+    {
+      "date": "4/13/2020",
+      "ticker": "VGT",
+      "type": "BUY",
+      "volume": 1,
+      "price": 223.78
+    },
+    {
+      "date": "4/27/2020",
+      "ticker": "AAPL",
+      "type": "SELL",
+      "volume": 12,
+      "price": 70.18
+    },
+    {
+      "date": "4/27/2020",
+      "ticker": "SBUX",
+      "type": "SELL",
+      "volume": 5,
+      "price": 76.85
+    },
+    {
+      "date": "4/27/2020",
+      "ticker": "COST",
+      "type": "SELL",
+      "volume": 1,
+      "price": 311.98
+    },
+    {
+      "date": "4/27/2020",
+      "ticker": "INTC",
+      "type": "SELL",
+      "volume": 4,
+      "price": 59.82
+    },
+    {
+      "date": "4/27/2020",
+      "ticker": "PYPL",
+      "type": "SELL",
+      "volume": 3,
+      "price": 120.46
+    },
+    {
+      "date": "4/27/2020",
+      "ticker": "CSCO",
+      "type": "SELL",
+      "volume": 7,
+      "price": 42.76
+    },
+    {
+      "date": "4/27/2020",
+      "ticker": "MSFT",
+      "type": "SELL",
+      "volume": 5,
+      "price": 175.85
+    },
+    {
+      "date": "4/27/2020",
+      "ticker": "ADP",
+      "type": "SELL",
+      "volume": 2,
+      "price": 139.77
+    },
+    {
+      "date": "4/30/2020",
+      "ticker": "JNJ",
+      "type": "SELL",
+      "volume": 3,
+      "price": 148.74
+    },
+    {
+      "date": "5/1/2020",
+      "ticker": "CSCO",
+      "type": "SELL",
+      "volume": 7,
+      "price": 41.45
+    },
+    {
+      "date": "5/1/2020",
+      "ticker": "VGT",
+      "type": "SELL",
+      "volume": 2,
+      "price": 237.34
+    }
+  ]
+}
