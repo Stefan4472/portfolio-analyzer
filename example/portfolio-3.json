@@ -1,0 +1,12 @@
+{
+  "name": "Total Market",
+  "transactions": [
+    {
+      "date": "3/17/2020",
+      "ticker": "VOO",
+      "type": "BUY",
+      "volume": 19,
+      "price": 232.88
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Microsoft",
+  "transactions": [
+    {
+      "date": "3/17/2020",
+      "ticker": "MSFT",
+      "type": "BUY",
+      "volume": 30,
+      "price": 146.57
+    }
+  ]
+}

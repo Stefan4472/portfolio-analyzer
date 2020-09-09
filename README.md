@@ -10,14 +10,8 @@ click
 
 
 # Running the Example
-I've provided a couple transaction files in the `example` folder. From the root of this repository, try running the following command (once you've installed the required packages):
+I've provided a couple portfolio files in the `example` folder. From the root of this repository, try running the following command (once you've installed the required packages):
 
-Single portfolio:
 ```
-python main.py 4500 example/transactions.txt -s 2020-3-10 -e 2020-8-31
-```
-
-Multiple portfolios:
-```
-python main.py 4500 example/transactions.txt example -h example/hypothetical-transactions-1.txt -h example/hypothetical-transactions-2.txt -h example/hypothetical-transactions-3.txt -h example/hypothetical-transactions-4.txt -h example/hypothetical-transactions-5.txt -h example/hypothetical-transactions-6.txt -s 2020-3-10 -e 2020-8-31
+python main.py 4500 example/portfolio-1.json example/portfolio-2.json example/portfolio-3.json example/portfolio-4.json example/portfolio-5.json example/portfolio-6.json -s 2020-3-10 -e 2020-8-31 --save_dir example
 ```

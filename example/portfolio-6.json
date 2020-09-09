@@ -1,0 +1,12 @@
+{
+  "name": "Tesla",
+  "transactions": [
+    {
+      "date": "3/17/2020",
+      "ticker": "TSLA",
+      "type": "BUY",
+      "volume": 52,
+      "price": 86.04
+    }
+  ]
+}

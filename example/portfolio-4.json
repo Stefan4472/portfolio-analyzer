@@ -1,0 +1,12 @@
+{
+  "name": "High Tech",
+  "transactions": [
+    {
+      "date": "3/17/2020",
+      "ticker": "VGT",
+      "type": "BUY",
+      "volume": 22,
+      "price": 201.46
+    }
+  ]
+}

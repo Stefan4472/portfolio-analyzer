@@ -46,9 +46,9 @@ class StockStatistic(typing.NamedTuple):
         # Calculate returns. Annualized formula from 
         # https://www.fool.com/knowledge-center/how-to-calculate-annualized-holding-period-return.aspx
         abs_return = ending_capital - dollars_spent
-        percent_return = abs_return / dollars_spent
+        frac_return = abs_return / dollars_spent
         annualized_return = \
-            (1 + percent_return) ** (1 / years_held) - 1
+            (1 + frac_return) ** (1 / years_held) - 1
         return StockStatistic(
             start_date,
             end_date,
@@ -57,7 +57,7 @@ class StockStatistic(typing.NamedTuple):
             dollars_spent,
             ending_capital,
             abs_return,
-            percent_return,
+            frac_return * 100,
             annualized_return,
         )
 
