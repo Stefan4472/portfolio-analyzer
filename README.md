@@ -1,10 +1,7 @@
 # portfolio-viewer
 A small python program to analyze and compare an arbitrary number of user-defined stock portfolios over time. Fetches stock data from the `Yahoo! Finance` website (and therefore requires an internet connection to run). Uses the [click](https://click.palletsprojects.com/en/7.x/) library to implement the command-line interface, and [matplotlib](https://matplotlib.org/) for plotting data.
 
-# Required Packages
-matplotlib
-dataclasses
-click
+![Plot comparing example portfolios over time](https://user-images.githubusercontent.com/8965354/94437178-64d8f280-016b-11eb-9f13-ed244dbd95d2.jpg)
 
 Written and tested in python 3.6.4.
 
