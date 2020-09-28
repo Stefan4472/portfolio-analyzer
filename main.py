@@ -13,7 +13,6 @@ import analyze as an
 import plot
 
 
-
 @click.command()
 @click.argument('starting_cash', type=float)
 @click.argument('portfolio_files', type=click.Path(exists=True, readable=True), nargs=-1)
@@ -45,7 +44,7 @@ def run(
     data_path = save_path / 'stock-data'
     data_path.mkdir(exist_ok=True)
 
-    # Create cache
+    # Create cache for stock data
     stock_data_cache = sd.StockDataCache(
         start_date, 
         end_date,
@@ -58,7 +57,7 @@ def run(
     # Map portfolio name to StockPriceHistory
     all_history: typing.Dict[str, sd.StockPriceHistory] = {}
 
-    # Parse portfolio files and analyze each
+    # Parse and analyze each portfolio file
     for portfolio_path in portfolio_files:
         with open(portfolio_path, 'r') as portfolio_file:
             portfolio = pf.Portfolio.from_json(json.load(portfolio_file))
@@ -76,7 +75,7 @@ def run(
             stock_data_cache,
         )
 
-        # Write stats to file, ordered by annualized return
+        # Write stats to file
         with open(portfolio_path / 'stats.json', 'w') as out_file:
             # Sort items ascending by annualized return
             sorted_stats = sorted(
@@ -84,11 +83,12 @@ def run(
                 key=lambda s: s[1].annualized_return, 
                 reverse=True,
             )
-            # Construct OrderedDict mapping ticker to stats-JSON 
+            # Construct OrderedDict mapping ticker -> {stats-JSON}.
+            # This is necessary to dump the statistics in sorted order.
             stats_json = collections.OrderedDict()
             for ticker, stats in sorted_stats:
                 stats_json[ticker] = stats.to_json()
-            # Write out
+            # Write out, calling `str()` on each item
             json.dump(stats_json, out_file, indent=4, default=str)
 
         # Calculate portfolio value for every day between `start_date` and
@@ -116,7 +116,10 @@ def run(
             all_history,
             set([portfolio.name,]),
         )
-        fig.savefig(portfolio_path / (portfolio.name + '.jpg'), bbox_inches='tight')
+        fig.savefig(
+            portfolio_path / (portfolio.name + '.jpg'), 
+            bbox_inches='tight',
+        )
 
     # TODO: BEST PRACTICE FOR PRINTING TO CONSOLE?
     if not quiet:
@@ -128,7 +131,10 @@ def run(
         all_history,
         all_history.keys()
     )
-    fig.savefig(save_path / 'portfolio-comparison.jpg', bbox_inches='tight')
+    fig.savefig(
+        save_path / 'portfolio-comparison.jpg', 
+        bbox_inches='tight',
+    )
 
     if not quiet:
         print('Done')

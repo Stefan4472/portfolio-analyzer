@@ -1,18 +1,16 @@
 import collections
 import typing
-# from matplotlib import pyplot as plt
-import matplotlib
+import matplotlib.pyplot as plt
 
 
-# TODO: THE TYPING FOR `VALS_OVER_TIME` IS ACTUALLY INCORRECT
 def create_portfolio_plot(
         starting_cash: float,
-        vals_over_time: 'collections.OrderedDict[datetime.date, float]',
+        vals_over_time: typing.Dict[str, 'collections.OrderedDict[datetime.date, float]'],
         portfolios_to_plot: typing.Set[str],
         title: str = 'Portfolio Value Over Time',
 ) -> typing.Tuple['matplotlib.figure.Figure', 'matplotlib.axes._subplots.AxesSubplot']:
-    # Note: I'm not sure how to properly type-hint the Pyplot `fig, ax` values
-    fig, ax = matplotlib.pyplot.subplots()
+    fig, ax = plt.subplots()
+    print(vals_over_time)
     fig.suptitle(title)
     ax.set_xlabel('Date')
     ax.set_ylabel('Value at Close ($)')
@@ -29,11 +27,15 @@ def create_portfolio_plot(
     ax.grid(True)
     # Rotate x-axis ticks to avoid cramping
     ax.tick_params(axis='x', labelrotation=20)
-    # Place legend to the upper right, outside the plot:
-    # https://stackoverflow.com/a/43832425
-    # if len(portfolios_to_plot) == 1:
-    #     fig.legend()
-    # else:
-    #     fig.legend(loc=(0.8, 0.7))
-    fig.legend()
+    # Only plotting one portfolio: place legend in "best" position
+    # (usually upper-right) 
+    if len(portfolios_to_plot) == 1:
+        fig.legend()
+    else:
+        # Plotting multiple portfolios: place legend at upper left,
+        # inside plot (so as to avoid covering part of the graph).
+        # Note: this was determined qualitatively based on what looked
+        # best for the example portfolios.
+        fig.legend(loc='upper left', bbox_to_anchor=(0.15, 0.85))
+
     return fig, ax

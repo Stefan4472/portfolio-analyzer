@@ -1,5 +1,6 @@
 env/
 __pycache__
 *.pyc
-example/*.csv
-example/*.jpg
+example/*
+!example/portfolio-*.json
+!example/README.md

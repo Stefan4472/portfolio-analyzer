@@ -8,6 +8,13 @@ import analyze as an
 
 
 class Portfolio:
+    """A simple representation of a user-defined portfolio.
+
+    Includes the name given to the portfolio and the list of
+    parsed `Transaction` instances. Does not store statistics--
+    use the provided `calc()` methods to calculate and get
+    statistics over specified date ranges.
+    """
     def __init__(
         self,
         name: str,
@@ -49,6 +56,12 @@ class Portfolio:
 
     @staticmethod
     def from_json(json_dict: typing.Dict[str, typing.Any]) -> 'Portfolio':
+        """Static factory method to marshall a `Portfolio` instance
+        from the provided JSON.
+
+        Note: the JSON validation is pretty tedious and could be improved
+        through the use of a library such as [jsonschema](https://pypi.org/project/jsonschema/)
+        """
         if 'name' not in json_dict:
             raise ValueError('Missing "name" key')
         if not isinstance(json_dict['name'], str):
@@ -63,7 +76,6 @@ class Portfolio:
 
         # TODO: ARE THESE PARSED IN-ORDER? CAN WE TELL THE USER THE INDEX OF THE TRANSACTION THAT FAILED?
         for transaction_json in json_dict['transactions']:
-            # TODO: USE JSONSCHEMA
             if 'date' not in transaction_json:
                 raise ValueError('Transaction missing "date" field')
             if not isinstance(transaction_json['date'], str):
@@ -94,10 +106,15 @@ class Portfolio:
             elif transaction_json['type'] == 'SELL':
                 transaction_type = tr.TransactionType.SELL
             else:
-                raise ValueError('Invalid type "{}"'.format(transaction_json['type']))
+                raise ValueError('Invalid type "{}"'.format(
+                    transaction_json['type'],
+                ))
             
             # TODO: CHECK ERROR
-            date = datetime.datetime.strptime(transaction_json['date'], r'%m/%d/%Y').date()
+            date = datetime.datetime.strptime(
+                transaction_json['date'], 
+                r'%m/%d/%Y',
+            ).date()
 
             transactions.append(tr.Transaction(
                 transaction_type,

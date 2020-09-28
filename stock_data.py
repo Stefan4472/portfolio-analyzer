@@ -8,12 +8,16 @@ import transactions as t
 
 
 class StockDataPoint(typing.NamedTuple):
+    """Open and close price for a particular ticker on a particular date."""
     day: datetime.date
     open_price: float
     close_price: float
 
 
 class StockPriceHistory(typing.NamedTuple):
+    """OrderedDictionary of `StockDataPoints`, indexed by date,
+    for every trading day between `start_date` and `end_date`, inclusive.
+    """
     start_date: datetime.date
     end_date: datetime.date
     history: 'collections.OrderedDict[datetime.date, StockDataPoint]'
@@ -24,7 +28,17 @@ def read_stock_datafile(
         needs_decode: bool = False,
         copy_to: typing.Optional[pathlib.Path] = None,
 ) -> StockPriceHistory:
-    """Read the provided file handle of csv stock data."""
+    """Read the provided file handle of csv stock data.
+    
+    This data is expected to be in a specific format (i.e., the format
+    that Yahoo! csv data comes in: date in first column, open price in
+    second column, close price in fifth column).
+    
+    This function was written to work on either a local-file handle, or 
+    on an encoded file (one that was just downloaded). Use the `needs_decode`
+    argument to specify whether the `filehandle` should be decoded before
+    use.
+    """
     stock_data: 'collections.OrderedDict[datetime.date, StockDataPoint]' = \
         collections.OrderedDict()
     csv_data = filehandle.read().decode() if needs_decode else filehandle.read()
@@ -85,13 +99,21 @@ def fetch_stock_data(
         write_to: typing.Optional[pathlib.Path] = None,
         quiet: bool = False,
 ) -> StockPriceHistory:
-    """Fetch and parse data for the specified ticker. `end_date` inclusive!"""
+    """Fetch data for the specified ticker and date range from Yahoo!,
+    parse it, and return as a `StockPriceHistory` instance.
+    
+    Note that `start_date` and `end_date` are inclusive!
+
+    Provide a `write_to` path to save the CSV data to a specific file,
+    and set `quiet` to print or hide console output.
+    """
     if not quiet:
         print('Fetching stock data for {}...'.format(ticker))
     # Add one day to the `end` date in order for the API to correctly return
     # result *up until* midnight on the next day.
     end_inclusive = end_date + datetime.timedelta(days=1)
     # Create url to download data from. Use Yahoo! public data.
+    # The Yahoo url takes unix timestamps.
     api_url = r'https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period1={unix_start_time}&period2={unix_end_time}&interval=1d&events=history'.format(
         ticker=ticker,
         unix_start_time=int(time.mktime(start_date.timetuple())),
@@ -107,7 +129,9 @@ def fetch_stock_data(
 
 
 class StockDataCache:
-    """Note: Helper, but all data must be in `start_date`, `end_date`"""
+    """Super simple helper object that fetches and stores per-ticker
+    data for the specified [`start_date`, `end_date` time range.
+    """
     def __init__(
             self,
             start_date: datetime.date,

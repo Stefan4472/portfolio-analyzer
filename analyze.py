@@ -6,8 +6,10 @@ import transactions as t
 import stock_data as sd
 
 
-# TODO: START_DATE, END_DATE NEEDED/USEFUL?
 class StockStatistic(typing.NamedTuple):
+    """Structure for storing the statistics for a specific stock
+    holding (i.e., a single ticker) over a specific time period.
+    """
     start_date: datetime.date
     end_date: datetime.date
     quantity_bought: int
@@ -19,7 +21,7 @@ class StockStatistic(typing.NamedTuple):
     annualized_return: float
 
     def to_json(self) -> typing.Dict[str, typing.Any]:
-        """Creates formatted json dict."""
+        """Creates formatted json dictionary."""
         return {
             'shares_bought': self.quantity_bought,
             'shares_sold': self.quantity_sold,
@@ -39,8 +41,10 @@ class StockStatistic(typing.NamedTuple):
             dollars_spent: float,
             ending_capital: float,
     ) -> 'StockStatistic':
-        """Factory method to create a `StockStatistic` instance that fills
-        certain fields."""
+        """Factory method to create a `StockStatistic` instance. 
+        
+        Calculates and fills the returns for the stock holding.
+        """
         # Calculate approximate number of years in question
         years_held = (end_date - start_date).days / 365
         # Calculate returns. Annualized formula from 
@@ -70,9 +74,11 @@ def calc_stock_statistic(
         end_date: datetime.date,
         stock_data_cache: sd.StockDataCache,
 ) -> StockStatistic:
-    """Calculate and return `StockStatistic` instance, given a list of
-    Transactions, *all of the same, specified `ticker`*.
-
+    """Given a list of Transactions and a specified date range,
+    calculate and return a `StockStatistic` instance.
+    
+    Note:
+    - all transactions must be for the same, specified `ticker`
     - `start_date` and `end_date` are inclusive
     - `end_date` must be a valid trading day, and be represented in the 
       `stock_data` dict
@@ -123,6 +129,12 @@ def calc_per_stock_stats(
         end_date: datetime.date,
         stock_data_cache: sd.StockDataCache,
 ) -> typing.Dict[str, StockStatistic]:
+    """Calculate the statistics for each stock ticker in the provided
+    list of transactions.
+
+    Returns a dictionary mapping stock ticker to `StockStatistic` 
+    instance for that ticker.
+    """
     # Map each ticker to a list of its transactions. Default to empty list.
     per_stock_transactions: \
         typing.Dict[str, typing.List[t.Transaction]] = collections.defaultdict(list)
@@ -149,7 +161,7 @@ def calc_value_over_time(
         stock_data_cache: sd.StockDataCache,
 ) -> 'collections.OrderedDict[datetime.date, float]':
     """Calculates the value of the portfolio at every trading day between
-    `start_date` and `end_date` (inclusive).
+    `start_date` and `end_date`, inclusive.
 
     NOTE: assumes `transactions` is sorted by date, ascending.
     This method is not hardened against missing/incomplete data.
@@ -183,7 +195,12 @@ def calc_value_over_time(
                 raise ValueError('Programmer Error: Unsupported TransactionType')
             next_transaction_index += 1
 
-        # Calculate value of holdings at day close
+        # Calculate value of holdings at day close.
+        # Ignore KeyErrors, which indicate that at least one of the stocks is 
+        # missing data for this date (e.g., this date may be a weekend or
+        # holiday).
+        # NOTE: if the data is expected to be irregular, a better mechanism
+        # for handling missing data will need to be developed.
         try:
             val_today = cash
             for ticker in curr_holdings:
@@ -191,10 +208,6 @@ def calc_value_over_time(
                 value = stock_data_cache.get_data(ticker).history[curr_date].close_price
                 val_today +=  volume * value
             val_over_time[curr_date] = val_today
-        # Ignore KeyErrors, which indicate that at least one of the stocks is 
-        # missing data for this date (e.g. on a weekend).
-        # NOTE: if the data is expected to be irregular, a better mechanism
-        # for handling missing data will need to be developed.
         except KeyError:
             pass
 
