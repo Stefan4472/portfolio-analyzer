@@ -28,10 +28,26 @@ def run(
         save_dir: str,
         quiet: bool,
 ):
-    """
-    # TODO: STATS.JSON OUTPUT WORKING
-    # TODO: MAKE SURE USER DOESN'T GO BELOW $0 BALANCE OR 0 VOLUME ON ANY STOCK TRADE
-    # TODO: CLEANUP USAGE OF STOCK_DATA_CACHE
+    """Run the portfolio-analyzer program on the specified user-defined
+    portfolio files.
+
+    The user must provide the amount of starting cash that was used to 
+    make all purchases (and is constant across all specified portfolios). 
+    This amount should be big enough to afford the purchase of all holdings
+    in each specified portfolio.
+
+    The user must also provide an arbitrary number of portfolio JSON
+    files, which will be analyzed and plotted. These files should 
+    follow the format demonstrated in the example.
+
+    Specify a save directory using the `--save_dir` option (recommended). 
+    Otherwise, all created files and charts will be saved to the directory
+    of execution.
+
+    Specify start and end dates to analyze the portfolios over using the 
+    `-s` and `-e` options, respectively.
+
+    Author: Stefan Kussmaul (https://github.com/Stefan4472)
     """
     if end_date <= start_date:
         raise ValueError('end_date must come chronologically after start_date')

@@ -10,7 +10,6 @@ def create_portfolio_plot(
         title: str = 'Portfolio Value Over Time',
 ) -> typing.Tuple['matplotlib.figure.Figure', 'matplotlib.axes._subplots.AxesSubplot']:
     fig, ax = plt.subplots()
-    print(vals_over_time)
     fig.suptitle(title)
     ax.set_xlabel('Date')
     ax.set_ylabel('Value at Close ($)')
