@@ -17,23 +17,24 @@ Written and tested in python 3.6.4.
 # Running the Example
 I've provided a couple portfolio files in the `example` folder. From the root of this repository, do the following:
 
-## Setup Virtual Environment
+### Setup a virtual environment
 Use the [python venv tool](https://docs.python.org/3/library/venv.html) to set up a new virtual environment:
 ```
 python3 -m venv portfolio-env
 ```
 
-Activate the environment:
+### Activate the environment
 ```
 portfolio-env\Scripts\activate.bat (Windows)
 source portfolio-env/scripts/activate.sh (Linux)
 ```
 
-Install the requirements:
+### Install the requirements
 ```
 pip install -r requirements.txt
 ```
 
+### Run the program
 Run the program on one example portfolio. Set start- and end-dates `March 10, 2020` to `August 31, 2020`. Save all created files to the `results-one` directory:
 ```
 python main.py 4500 example/portfolio-1.json -s 2020-3-10 -e 2020-8-31 --save_dir results-one
