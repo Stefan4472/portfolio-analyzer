@@ -29,6 +29,7 @@ platformdirs==4.1.0
 plette==0.4.4
 pydantic==2.5.2
 pydantic_core==2.14.5
+pyrate-limiter==3.1.0
 python-dateutil==2.8.2
 pytz==2023.3.post1
 requests==2.31.0

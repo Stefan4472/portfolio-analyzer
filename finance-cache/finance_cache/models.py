@@ -10,6 +10,7 @@ class Base(DeclarativeBase):
     pass
 
 
+# TODO: track last_fetched_date, num_queries
 class TickerModel(Base):
     __tablename__ = "ticker"
     ticker: Mapped[str] = mapped_column(String(20), primary_key=True)
