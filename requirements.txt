@@ -10,7 +10,7 @@ click==8.1.7
 colorama==0.4.6
 distlib==0.3.7
 docopt==0.6.2
--e git+https://github.com/Stefan4472/portfolio-analyzer.git@4095a8bb2c75c0ebdedc608c2993eae42123eac2#egg=finance_cache&subdirectory=finance-cache
+-e git+https://github.com/Stefan4472/portfolio-analyzer.git@cbf66a04b098b69f65c2ff5f64aa2d4efac8930a#egg=finance_cache&subdirectory=finance-cache
 Flask==2.3.2
 frozendict==2.3.10
 greenlet==3.0.2
@@ -21,6 +21,7 @@ itsdangerous==2.1.2
 Jinja2==3.1.2
 lxml==4.9.3
 MarkupSafe==2.1.3
+marshmallow==3.20.1
 multitasking==0.0.11
 mypy-extensions==1.0.0
 numpy==1.26.2

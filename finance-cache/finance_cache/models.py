@@ -1,9 +1,8 @@
 from datetime import date
 
+from finance_cache.public_models import PriceHistory
 from sqlalchemy import Date, Float, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-from finance_cache.public_models import PriceHistory
 
 
 class Base(DeclarativeBase):

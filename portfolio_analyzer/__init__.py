@@ -22,8 +22,8 @@ def create_app():
 
     @app.route("/<string:ticker>")
     def get_ticker(ticker: str):
-        # TODO: only read from cache and implement a better mechanism to pre-load the cache.
-        history = app.config["FINANCE_CACHE"].get_price_history(ticker, cache_only=False)
+        # TODO: implement a better mechanism to pre-load the cache.
+        history = app.config["FINANCE_CACHE"].get_price_history(ticker)
         as_json = {str(h.day): h.close for h in history}
         return flask.make_response(as_json)
 
