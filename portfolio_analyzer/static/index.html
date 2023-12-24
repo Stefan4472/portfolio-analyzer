@@ -15,9 +15,9 @@
       <div class="row">
         <div class="col">
           <div class="mb-3">
-            <label for="ticker" class="form-label">Stock Ticker</label>
-            <input type="text" class="form-control" id="ticker" value="GOOG"/>
-            <button class="btn btn-primary" id="submit">Run Query</button>
+            <label for="portfolio-input" class="form-label">Portfolio Input</label>
+            <textarea class="form-control" id="portfolio-input" rows="10"></textarea>
+            <button class="btn btn-primary" id="submit">Go</button>
           </div>
         </div>
       </div>
@@ -80,18 +80,18 @@
       updateLineChart(datasets);
     }
 
-    function runQuery(ticker) {
+    function runQuery() {
       const req = new XMLHttpRequest();
       req.addEventListener("load", handleQueryResponse);
-      let requestUrl = "http://127.0.0.1:5000/" + ticker;
-      req.open("GET", requestUrl);
-      req.setRequestHeader('Authorization', '1234')
-      req.send();
+      let requestUrl = "http://127.0.0.1:5000/portfolio";
+      req.open("POST", requestUrl);
+      // req.setRequestHeader('Authorization', '1234')
+      req.setRequestHeader('Content-Type', 'application/json');
+      req.send(document.getElementById("portfolio-input").value);
     }
 
     function runExistingQuery() {
-      const ticker = document.getElementById("ticker").value;
-      runQuery(ticker);
+      runQuery();
     }
 
     document.getElementById("submit").addEventListener('click', runExistingQuery);

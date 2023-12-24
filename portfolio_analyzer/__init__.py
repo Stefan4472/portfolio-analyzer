@@ -4,8 +4,10 @@ from datetime import datetime
 from pathlib import Path
 
 from finance_cache.finance_cache import FinanceCache
-from flask import Flask, request
+from flask import Flask, Response, make_response, request
 
+from portfolio_analyzer.analyze import (calculate_value_over_time,
+                                        preprocess_portfolio)
 from portfolio_analyzer.portfolio import PortfolioSchema
 
 
@@ -34,10 +36,21 @@ def create_app():
     def process_portfolio():
         try:
             as_json = json.loads(request.data.decode("ascii"))
-            _portfolio = PortfolioSchema().load(as_json)
-            print(_portfolio)
+            raw_portfolio = PortfolioSchema().load(as_json)
+            processed_portfolio = preprocess_portfolio(raw_portfolio)
+            print(processed_portfolio)
+            res = calculate_value_over_time(
+                processed_portfolio,
+                10000,
+                datetime(year=2020, month=3, day=1).date(),
+                datetime(year=2020, month=4, day=1).date(),
+                app.config["FINANCE_CACHE"],
+            )
+            as_json = {str(r.date): r.value for r in res}
+            print(as_json)
+            return make_response(as_json)
         except Exception as e:
             print(e)
-        return "Hello world"
+            return Response(status=500)
 
     return app

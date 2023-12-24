@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import List
+from typing import Dict
 
 from finance_cache.fetcher import YFinanceFetcher
 from finance_cache.models import Base, PriceHistoryModel, TickerModel
@@ -32,8 +32,20 @@ class FinanceCache:
         self._fetcher = YFinanceFetcher()
         Base.metadata.create_all(self._engine)
 
-    def get_price_history(self, ticker: str) -> List[PriceHistory]:
-        """Returns all known price history for the specified ticker."""
+    def knows_ticker(self, ticker: str) -> bool:
+        with self._session_maker() as session:
+            find_ticker = session.query(TickerModel).filter(
+                TickerModel.ticker == ticker.upper()
+            )
+            return session.query(find_ticker.exists()).scalar()
+
+    def get_price_history(
+        self, ticker: str, start_date: date, end_date: date
+    ) -> Dict[date, PriceHistory]:
+        """
+        Returns price history from `start_date` inclusive until `end_date`
+        inclusive for the specified ticker, ordered by date increasing.
+        """
         with self._session_maker() as session:
             find_ticker = (
                 session.query(TickerModel).filter(TickerModel.ticker == ticker).first()
@@ -41,13 +53,15 @@ class FinanceCache:
             if find_ticker is None:
                 raise ValueError(f"No such ticker in cache.")
 
-            res = (
-                session.query(PriceHistoryModel)
-                .filter(PriceHistoryModel.ticker == ticker)
+            return {
+                r.day: r.to_price_history()
+                for r in session.query(PriceHistoryModel)
+                .where(PriceHistoryModel.ticker == ticker)
+                .where(PriceHistoryModel.day >= start_date)
+                .where(PriceHistoryModel.day <= end_date)
                 .order_by(PriceHistoryModel.day)
                 .all()
-            )
-            return [r.to_price_history() for r in res]
+            }
 
     def load(self, ticker: str):
         """Loads data for the specified ticker into the cache. This is slow."""

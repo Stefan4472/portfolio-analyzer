@@ -20,7 +20,7 @@ class Action:
 
     type: ActionType
     ticker: str
-    date: datetime
+    date: datetime.date
     volume: float
     price: Optional[float]
 
@@ -37,7 +37,7 @@ class ActionSchema(Schema):
 
     type = EnumField(ActionType, allow_none=False)
     ticker = fields.Str(allow_none=False)
-    date = fields.DateTime(format="%Y-%m-%d", allow_none=False)
+    date = fields.Date(format="%Y-%m-%d", allow_none=False)
     volume = fields.Float(allow_none=False)
     price = fields.Float(required=False, allow_none=False)
 
