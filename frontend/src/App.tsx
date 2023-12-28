@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Endpoints from "./Endpoints";
 import { TickerValue } from "./Endpoints";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 import {
   Chart as ChartJS,
@@ -29,11 +30,10 @@ export const options = {
   responsive: true,
   plugins: {
     legend: {
-      position: "top" as const,
+      position: "right" as const,
     },
     title: {
-      display: true,
-      text: "Chart.js Line Chart",
+      display: false,
     },
   },
   scales: {
@@ -43,16 +43,32 @@ export const options = {
   },
 };
 
+const startingPortfolio = `
+{
+  "actions": [
+    {
+      "date": "2020-03-17",
+      "ticker": "TSLA",
+      "type": "Buy",
+      "volume": 52,
+      "price": 28.00
+    }
+  ]
+}
+`;
 export const App: React.FC = () => {
-  const [ticker, setTicker] = useState<string>("GOOG");
+  const [portfolioDefinition, setPortfolioDefinition] =
+    useState<string>(startingPortfolio);
   const [data, setData] = useState<TickerValue[]>([]);
 
-  function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
-    setTicker(e.target.value);
+  function handleInput(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    // TODO: validate before setting value.
+    setPortfolioDefinition(e.target.value);
   }
 
   function handleClick() {
-    Endpoints.getTicker(ticker).then((res) => {
+    Endpoints.processPortfolio(portfolioDefinition).then((res) => {
+      console.log(res);
       setData(res);
     });
   }
@@ -63,7 +79,7 @@ export const App: React.FC = () => {
       labels: tickerData.map((d: TickerValue) => d.date),
       datasets: [
         {
-          label: "GOOG",
+          label: "Portfolio",
           data: tickerData.map((d) => d.value),
           borderColor: "rgb(255, 99, 132)",
           backgroundColor: "rgba(255, 99, 132, 0.5)",
@@ -73,11 +89,32 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div>
-      <h1>Hello world.</h1>
-      <input onChange={handleInput} />
-      <button onClick={handleClick}>Click me.</button>
-      <Line options={options} data={formDataset(data)} />;
+    <div className="container">
+      <div className="row">
+        <div className="col">
+          <Line options={options} data={formDataset(data)} />
+        </div>
+      </div>
+      <div className="row">
+        <div className="col">
+          <div className="mb-3">
+            <label htmlFor="portfolio-input" className="form-label">
+              Portfolio Input
+            </label>
+            <textarea
+              className="form-control"
+              id="portfolio-input"
+              defaultValue={startingPortfolio}
+              rows={10}
+              cols={80}
+              onChange={handleInput}
+            />
+            <button className="btn btn-primary" onClick={handleClick}>
+              Go
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

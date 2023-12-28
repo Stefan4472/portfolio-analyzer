@@ -38,6 +38,13 @@ def create_app():
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response
 
+    @app.route("/portfolio", methods=["OPTIONS"])
+    def process_portfolio_cors():
+        res = make_response()
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        res.headers.add("Access-Control-Allow-Headers", "*")
+        return res
+
     # TODO: allow specifying start and end date.
     @app.route("/portfolio", methods=["POST"])
     def process_portfolio():
@@ -50,12 +57,14 @@ def create_app():
                 processed_portfolio,
                 10000,
                 datetime(year=2020, month=3, day=1).date(),
-                datetime(year=2020, month=4, day=1).date(),
+                datetime(year=2020, month=6, day=1).date(),
                 app.config["FINANCE_CACHE"],
             )
-            as_json = {str(r.date): r.value for r in res}
-            print(as_json)
-            return make_response(as_json)
+            as_json = [{"date": str(r.date), "value": r.value} for r in res]
+            response = make_response(as_json)
+            # TODO: remove
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response
         except Exception as e:
             print(e)
             return Response(status=500)
