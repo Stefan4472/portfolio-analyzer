@@ -27,8 +27,15 @@ class Endpoints {
 
   async processPortfolio(
     portfolioDefinition: string,
+    startDate: string,
+    endDate: string,
   ): Promise<PortfolioValue[]> {
-    const result = await axiosInstance.post("/portfolio", portfolioDefinition);
+    const result = await axiosInstance.post("/portfolio", portfolioDefinition, {
+      params: {
+        start_date: startDate,
+        end_date: endDate,
+      },
+    });
     return result.data as PortfolioValue[];
   }
 }

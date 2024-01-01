@@ -44,7 +44,6 @@ export const kPlotOptions = {
 
 function formDataset(processed: ProcessedPortfolio[]): ChartData<"line"> {
   console.log("Forming dataset wth data ", processed);
-  console.log(processed.length);
   if (processed.length === 0) {
     return {
       labels: [],
@@ -64,6 +63,9 @@ function formDataset(processed: ProcessedPortfolio[]): ChartData<"line"> {
 
 interface PlotterProps {
   portfolios: ProcessedPortfolio[];
+  // TODO: use a Javascript date library and pass in actual date objects.
+  startDate: string;
+  endDate: string;
 }
 
 export const PortfolioPlotter: React.FC<PlotterProps> = (props) => {

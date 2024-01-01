@@ -45,10 +45,12 @@ def create_app():
         res.headers.add("Access-Control-Allow-Headers", "*")
         return res
 
-    # TODO: allow specifying start and end date.
     @app.route("/portfolio", methods=["POST"])
     def process_portfolio():
         try:
+            # TODO: marshmallow validation of query params.
+            start_date = datetime.fromisoformat(request.args["start_date"]).date()
+            end_date = datetime.fromisoformat(request.args["end_date"]).date()
             as_json = json.loads(request.data.decode("ascii"))
             raw_portfolio = PortfolioSchema().load(as_json)
             processed_portfolio = preprocess_portfolio(raw_portfolio)
@@ -56,8 +58,8 @@ def create_app():
             res = calculate_value_over_time(
                 processed_portfolio,
                 10000,
-                datetime(year=2020, month=3, day=1).date(),
-                datetime(year=2020, month=6, day=1).date(),
+                start_date,
+                end_date,
                 app.config["FINANCE_CACHE"],
             )
             as_json = [{"date": str(r.date), "value": r.value} for r in res]
