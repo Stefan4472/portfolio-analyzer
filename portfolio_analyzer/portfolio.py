@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from marshmallow import Schema, fields, post_load
+from marshmallow import Schema, fields, post_load, validate
 from marshmallow_enum import EnumField
 
 
@@ -29,6 +29,7 @@ class Action:
 class Portfolio:
     """A simple representation of a user-defined portfolio."""
 
+    starting_cash: float
     actions: List[Action]
 
 
@@ -45,8 +46,11 @@ class ActionSchema(Schema):
 class PortfolioSchema(Schema):
     """The schema for a Portfolio."""
 
+    starting_cash = fields.Float(
+        required=True, allow_none=False, validate=validate.Range(min=0)
+    )
     actions = fields.List(fields.Nested(ActionSchema))
 
     @post_load
     def to_dataclass(self, data, **kwargs) -> Portfolio:
-        return Portfolio([Action(**a) for a in data["actions"]])
+        return Portfolio(data["starting_cash"], [Action(**a) for a in data["actions"]])

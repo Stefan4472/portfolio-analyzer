@@ -1,6 +1,7 @@
 // TODO: need VOO
 export const totalMarketPortfolio = `
 {
+  "starting_cash": 10000,
   "actions": [
     {
       "date": "2020-03-17",
@@ -15,7 +16,8 @@ export const totalMarketPortfolio = `
 
 export const highTechPortfolio = `
 {
-"actions": [
+  "starting_cash": 10000,
+  "actions": [
     {
       "date": "2020-03-17",
       "ticker": "VGT",
@@ -29,6 +31,7 @@ export const highTechPortfolio = `
 
 export const teslaPortfolio = `
 {
+  "starting_cash": 10000,
   "actions": [
     {
       "date": "2020-03-17",

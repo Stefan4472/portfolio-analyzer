@@ -9,9 +9,10 @@ from finance_cache.public_models import PriceHistory
 from portfolio_analyzer.portfolio import Action, ActionType, Portfolio
 
 
+# TODO: make immutable.
 @dataclass
 class ProcessedPortfolio:
-    # TODO: make immutable.
+    starting_cash: float
     tickers: Set[str]
     actions: List[Action]
 
@@ -19,6 +20,7 @@ class ProcessedPortfolio:
 def preprocess_portfolio(portfolio: Portfolio) -> ProcessedPortfolio:
     # TODO: check that each ticker is present in the cache?
     return ProcessedPortfolio(
+        portfolio.starting_cash,
         set([action.ticker for action in portfolio.actions]),
         sorted(portfolio.actions, key=lambda a: a.date),
     )
@@ -53,7 +55,6 @@ def calculate_value_at_close(
 
 def calculate_value_over_time(
     portfolio: ProcessedPortfolio,
-    starting_cash: float,
     start_date: datetime.date,
     end_date: datetime.date,
     finance_cache: FinanceCache,
@@ -83,7 +84,7 @@ def calculate_value_over_time(
     # Track current stock holdings: {ticker -> volume}.
     curr_holdings: Dict[str, float] = defaultdict(lambda: 0)
     # The cash balance from buying/selling shares. May go below zero.
-    cash = starting_cash
+    cash = portfolio.starting_cash
     # Index of next action to be applied.
     next_index = 0
     # Date being processed.
@@ -113,7 +114,7 @@ def calculate_value_over_time(
             )
             value_over_time.append(DateAndValue(curr_date, curr_value))
         except ValueError:
-            print(f"Skipping {curr_date} because we don't have data for every ticker.")
+            # print(f"Skipping {curr_date} because we don't have data for every ticker.")
             pass
 
         # Increment to the next day

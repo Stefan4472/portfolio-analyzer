@@ -54,10 +54,8 @@ def create_app():
             as_json = json.loads(request.data.decode("ascii"))
             raw_portfolio = PortfolioSchema().load(as_json)
             processed_portfolio = preprocess_portfolio(raw_portfolio)
-            print(processed_portfolio)
             res = calculate_value_over_time(
                 processed_portfolio,
-                10000,
                 start_date,
                 end_date,
                 app.config["FINANCE_CACHE"],
