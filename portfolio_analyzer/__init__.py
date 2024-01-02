@@ -8,17 +8,17 @@ from flask import Flask, Response, make_response, request
 
 from portfolio_analyzer.analyze import (calculate_value_over_time,
                                         preprocess_portfolio)
+from portfolio_analyzer.config import AppConfig
 from portfolio_analyzer.portfolio import PortfolioSchema
 
 
-def create_app():
+def create_app(app_config: AppConfig = None):
     """Creates the Flask app. Uses the provided `test_config`, if non-Null."""
-    app = Flask(__name__, instance_relative_config=True)
-    instance = Path(app.instance_path)
-    instance.mkdir(exist_ok=True)
-    app.config["FINANCE_CACHE"] = FinanceCache(
-        Path(app.instance_path) / "finance_cache", datetime(year=2015, month=1, day=1)
-    )
+    if app_config is None:
+        app_config = AppConfig.from_environment()
+
+    app = Flask(__name__)
+    app.config["FINANCE_CACHE"] = FinanceCache(Path(app_config.cache_path))
 
     @app.route("/")
     def index():

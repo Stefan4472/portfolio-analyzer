@@ -96,8 +96,7 @@ def generate_portfolio(
 
 if __name__ == "__main__":
     cache = FinanceCache(
-        Path(r"C:\Users\Stefan\Github\portfolio-analyzer\instance") / "finance_cache",
-        datetime(year=2015, month=1, day=1),
+        Path(r"C:\Users\Stefan\Github\portfolio-analyzer\cache")
     )
     spec = DollarCostAverageStrategy("weekly", [DcaBuy("VGT", 500)])
     generated = generate_portfolio(spec, date(2022, 1, 1), date(2023, 1, 1), cache)

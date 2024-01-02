@@ -15,14 +15,13 @@ class TickersFileSchema(Schema):
 @click.argument(
     "cache_path", type=click.Path(file_okay=False, dir_okay=True, path_type=Path)
 )
-@click.argument("history_start", type=click.DateTime(formats=["%Y-%m-%d"]))
 @click.argument(
     "tickers_file",
     type=click.Path(
         file_okay=True, dir_okay=False, exists=True, readable=True, path_type=Path
     ),
 )
-def preload_cache(cache_path: Path, history_start: datetime, tickers_file: Path):
+def preload_cache(cache_path: Path, tickers_file: Path):
     """
     Sends the FinanceCache requests to update data for all the tickers in `tickers_file`.
     """
@@ -32,7 +31,7 @@ def preload_cache(cache_path: Path, history_start: datetime, tickers_file: Path)
 
     click.echo(f"Received {len(tickers)} tickers to load.")
     start_time = datetime.now()
-    cache = FinanceCache(cache_path, history_start.date())
+    cache = FinanceCache(cache_path)
     for ticker in tickers:
         # TODO: catch exception, e.g. ticker not found
         cache.load(ticker)
