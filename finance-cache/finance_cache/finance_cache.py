@@ -1,14 +1,14 @@
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 from finance_cache.config import CacheConfig, CacheConfigSchema
 from finance_cache.fetcher import YFinanceFetcher
 from finance_cache.models import Base, PriceHistoryModel, StockModel
 from finance_cache.public_models import PriceHistory
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
 
 class FinanceCache:
@@ -111,41 +111,47 @@ class FinanceCache:
     def load(self, ticker: str):
         """Loads data for the specified stock into the cache. This is slow."""
         print(f"Loading data for {ticker}.")
+        session: Session
         with self._session_maker() as session:
-            stock = (
+            stock: Optional[StockModel] = (
                 session.query(StockModel).filter(StockModel.ticker == ticker).first()
             )
-            # TODO: load date between `last_fetch` and now.
-            if stock:
-                print(f"We already have data for {ticker}.")
-                return
+            if not stock:
+                # Load information about the stock.
+                stock_info = self._fetcher.fetch_stock_info(ticker)
+                stock = StockModel(
+                    ticker=ticker,
+                    name=stock_info.name,
+                    quote_type=stock_info.quote_type,
+                    description=stock_info.description,
+                )
+                session.add(stock)
+                # Flush to ensure `stock` gets an ID primary key assigned.
+                session.flush()
 
-            # Load information about the stock.
-            stock_info = self._fetcher.fetch_stock_info(ticker)
-            stock = StockModel(
-                ticker=ticker,
-                name=stock_info.name,
-                quote_type=stock_info.quote_type,
-                description=stock_info.description,
+            # Don't fetch data for days that we already have in the database.
+            freshest_market_data: Optional[PriceHistoryModel] = (
+                session.query(PriceHistoryModel)
+                .where(PriceHistoryModel.stock_id == stock.id)
+                .order_by(PriceHistoryModel.day.desc())
+                .first()
             )
-            session.add(stock)
-            # Flush to ensure `stock` gets an ID primary key assigned.
-            session.flush()
+            start_date = (
+                freshest_market_data.day + timedelta(days=1)
+                if freshest_market_data
+                else self._config.history_start
+            )
 
-            # Now fetch all market data.
             market_data = self._fetcher.fetch_market_data(
-                ticker,
-                self._config.history_start,
-                datetime.now().date(),
+                ticker, start_date, datetime.now().date()
             )
-            # TODO: look into settings to optimize bulk adds
-            for day_data in market_data:
+            for day in market_data:
                 session.add(
                     PriceHistoryModel(
                         stock_id=stock.id,
-                        day=day_data.day,
-                        open=day_data.open_price,
-                        close=day_data.close_price,
+                        day=day.day,
+                        open=day.open_price,
+                        close=day.close_price,
                     )
                 )
             session.commit()

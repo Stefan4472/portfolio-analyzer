@@ -32,6 +32,7 @@ class MaxWaitExceeded(RuntimeError):
     Error raised when the fetcher had to wait too long to perform an operation
     while waiting in order ot comply with the QPS limit.
     """
+
     pass
 
 
@@ -94,15 +95,21 @@ class YFinanceFetcher:
         known to Yahoo! Finance). Raises MaxWaitExceeded error if the request
         could not be made within the configured `max_wait`.
         """
+        if start_date == end_date:
+            return []
         deadline = datetime.now() + self._acquire_timeout
         while datetime.now() < deadline:
             try:
                 self._limiter.try_acquire("lock")
                 yticker = yfinance.Ticker(ticker)
                 history = yticker.history(start=start_date, end=end_date)
+                # Note: I added a filter to double-check we don't return data
+                # outside [start_date, end_date]. I've noticed yfinance may
+                # return data that is outside of the range by a day.
                 return [
                     DailyMarketData(index.date(), row["Open"], row["Close"])
                     for index, row in history.iterrows()
+                    if start_date <= index.date() <= end_date
                 ]
             except BucketFullException:
                 time.sleep(0.1)
