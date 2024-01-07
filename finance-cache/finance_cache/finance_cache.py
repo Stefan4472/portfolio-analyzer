@@ -94,21 +94,19 @@ class FinanceCache:
         inclusive for the specified ticker, ordered by date increasing.
         """
         with self._session_maker() as session:
-            find_stock = (
-                session.query(StockModel).filter(StockModel.ticker == ticker).first()
-            )
-            if find_stock is None:
-                raise ValueError(f"No such stock in cache.")
-
-            return {
-                r.day: r.to_price_history()
-                for r in session.query(PriceHistoryModel)
-                .where(PriceHistoryModel.ticker == ticker)
+            res = (
+                session.query(PriceHistoryModel)
+                .join(StockModel)
+                .where(StockModel.ticker == ticker)
+                .where(PriceHistoryModel.stock_id == StockModel.id)
                 .where(PriceHistoryModel.day >= start_date)
                 .where(PriceHistoryModel.day <= end_date)
                 .order_by(PriceHistoryModel.day)
                 .all()
-            }
+            )
+            if res:
+                return {r.day: r.to_price_history() for r in res}
+        raise ValueError(f"No data for {ticker}.")
 
     def load(self, ticker: str):
         """Loads data for the specified stock into the cache. This is slow."""
@@ -124,14 +122,15 @@ class FinanceCache:
 
             # Load information about the stock.
             stock_info = self._fetcher.fetch_stock_info(ticker)
-            session.add(
-                StockModel(
-                    ticker=ticker,
-                    name=stock_info.name,
-                    quote_type=stock_info.quote_type,
-                    description=stock_info.description,
-                )
+            stock = StockModel(
+                ticker=ticker,
+                name=stock_info.name,
+                quote_type=stock_info.quote_type,
+                description=stock_info.description,
             )
+            session.add(stock)
+            # Flush to ensure `stock` gets an ID primary key assigned.
+            session.flush()
 
             # Now fetch all market data.
             market_data = self._fetcher.fetch_market_data(
@@ -143,7 +142,7 @@ class FinanceCache:
             for day_data in market_data:
                 session.add(
                     PriceHistoryModel(
-                        ticker=ticker,
+                        stock_id=stock.id,
                         day=day_data.day,
                         open=day_data.open_price,
                         close=day_data.close_price,
