@@ -32,7 +32,9 @@ def create_app(app_config: AppConfig = None):
             datetime(year=2022, month=1, day=1).date(),
             datetime(year=2023, month=1, day=1).date(),
         )
-        as_json = [{"date": str(h.day), "value": h.close} for h in history.values()]
+        as_json = [
+            {"date": str(h.day), "value": h.close_price} for h in history.values()
+        ]
         response = make_response(as_json)
         # TODO: remove. Just using this as a quick workaround for now.
         response.headers.add("Access-Control-Allow-Origin", "*")

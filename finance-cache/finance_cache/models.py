@@ -10,7 +10,6 @@ class Base(DeclarativeBase):
     pass
 
 
-# TODO: store `last_metadata_fetch` and `last_market_data_fetch`.
 class StockModel(Base):
     """Information known about a single stock."""
 
@@ -20,23 +19,25 @@ class StockModel(Base):
     name: Mapped[str] = mapped_column(String(100))
     quote_type: Mapped[str] = mapped_column(String(25))
     description: Mapped[str] = mapped_column(String())
+
     # MarketData records associated with this stock.
-    market_data: Mapped[List["PriceHistoryModel"]] = relationship()
+    market_data: Mapped[List["MarketDataModel"]] = relationship()
 
     def __repr__(self) -> str:
         return f"Stock({self.ticker})"
 
 
-class PriceHistoryModel(Base):
-    __tablename__ = "price_history"
+class MarketDataModel(Base):
+    """Market data for a single stock on a particular day."""
+
+    __tablename__ = "market_data"
     id: Mapped[int] = mapped_column(primary_key=True)
     # The stock that this record describes.
     stock_id: Mapped[int] = mapped_column(ForeignKey("stock.id"))
     day: Mapped[date] = mapped_column(Date)
     # TODO: Store as int for precision.
-    # TODO: rename `open_price`, `close_price`.
-    open: Mapped[float] = mapped_column(Float)
-    close: Mapped[float] = mapped_column(Float)
+    open_price: Mapped[float] = mapped_column(Float)
+    close_price: Mapped[float] = mapped_column(Float)
 
     # There must only be one record per ticker for any given day.
     __table_args__ = (UniqueConstraint("stock_id", "day"),)
@@ -44,12 +45,12 @@ class PriceHistoryModel(Base):
     def to_price_history(self) -> PriceHistory:
         return PriceHistory(
             day=self.day,
-            open=self.open,
-            close=self.close,
+            open=self.open_price,
+            close=self.close_price,
         )
 
     def __repr__(self) -> str:
         return (
             f"PriceHistory(id={self.id}, ticker_id={self.stock_id}, "
-            f"day={self.day}, open={self.open}, close={self.close})"
+            f"day={self.day}, open={self.open_price}, close={self.close_price})"
         )

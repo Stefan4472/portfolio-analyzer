@@ -5,10 +5,10 @@ from typing import Dict, Optional
 
 from finance_cache.config import CacheConfig, CacheConfigSchema
 from finance_cache.fetcher import YFinanceFetcher
-from finance_cache.models import Base, PriceHistoryModel, StockModel
+from finance_cache.models import Base, MarketDataModel, StockModel
 from finance_cache.public_models import PriceHistory
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 
 class FinanceCache:
@@ -95,13 +95,13 @@ class FinanceCache:
         """
         with self._session_maker() as session:
             res = (
-                session.query(PriceHistoryModel)
+                session.query(MarketDataModel)
                 .join(StockModel)
                 .where(StockModel.ticker == ticker)
-                .where(PriceHistoryModel.stock_id == StockModel.id)
-                .where(PriceHistoryModel.day >= start_date)
-                .where(PriceHistoryModel.day <= end_date)
-                .order_by(PriceHistoryModel.day)
+                .where(MarketDataModel.stock_id == StockModel.id)
+                .where(MarketDataModel.day >= start_date)
+                .where(MarketDataModel.day <= end_date)
+                .order_by(MarketDataModel.day)
                 .all()
             )
             if res:
@@ -130,10 +130,10 @@ class FinanceCache:
                 session.flush()
 
             # Don't fetch data for days that we already have in the database.
-            freshest_market_data: Optional[PriceHistoryModel] = (
-                session.query(PriceHistoryModel)
-                .where(PriceHistoryModel.stock_id == stock.id)
-                .order_by(PriceHistoryModel.day.desc())
+            freshest_market_data: Optional[MarketDataModel] = (
+                session.query(MarketDataModel)
+                .where(MarketDataModel.stock_id == stock.id)
+                .order_by(MarketDataModel.day.desc())
                 .first()
             )
             start_date = (
@@ -147,11 +147,11 @@ class FinanceCache:
             )
             for day in market_data:
                 session.add(
-                    PriceHistoryModel(
+                    MarketDataModel(
                         stock_id=stock.id,
                         day=day.day,
-                        open=day.open_price,
-                        close=day.close_price,
+                        open_price=day.open_price,
+                        close_price=day.close_price,
                     )
                 )
             session.commit()
