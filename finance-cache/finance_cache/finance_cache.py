@@ -1,18 +1,17 @@
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 from typing import Dict
 
 from finance_cache.config import CacheConfig, CacheConfigSchema
 from finance_cache.fetcher import YFinanceFetcher
-from finance_cache.models import Base, PriceHistoryModel, TickerModel
+from finance_cache.models import Base, PriceHistoryModel, StockModel
 from finance_cache.public_models import PriceHistory
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 
 class FinanceCache:
-
     # TODO: allow injecting a logger?
     def __init__(self, base_path: Path):
         """
@@ -82,10 +81,10 @@ class FinanceCache:
 
     def knows_ticker(self, ticker: str) -> bool:
         with self._session_maker() as session:
-            find_ticker = session.query(TickerModel).filter(
-                TickerModel.ticker == ticker.upper()
+            find_stock = session.query(StockModel).filter(
+                StockModel.ticker == ticker.upper()
             )
-            return session.query(find_ticker.exists()).scalar()
+            return session.query(find_stock.exists()).scalar()
 
     def get_price_history(
         self, ticker: str, start_date: date, end_date: date
@@ -95,11 +94,11 @@ class FinanceCache:
         inclusive for the specified ticker, ordered by date increasing.
         """
         with self._session_maker() as session:
-            find_ticker = (
-                session.query(TickerModel).filter(TickerModel.ticker == ticker).first()
+            find_stock = (
+                session.query(StockModel).filter(StockModel.ticker == ticker).first()
             )
-            if find_ticker is None:
-                raise ValueError(f"No such ticker in cache.")
+            if find_stock is None:
+                raise ValueError(f"No such stock in cache.")
 
             return {
                 r.day: r.to_price_history()
@@ -112,39 +111,42 @@ class FinanceCache:
             }
 
     def load(self, ticker: str):
-        """Loads data for the specified ticker into the cache. This is slow."""
-        self._fetch_data(ticker)
-
-    def _fetch_data(self, ticker: str):
-        """
-        Fetches data from the external source and writes it to the database.
-
-        This is very slow.
-        """
-        print(f"Fetching data for {ticker}.")
+        """Loads data for the specified stock into the cache. This is slow."""
+        print(f"Loading data for {ticker}.")
         with self._session_maker() as session:
-            find_ticker = (
-                session.query(TickerModel).filter(TickerModel.ticker == ticker).first()
+            stock = (
+                session.query(StockModel).filter(StockModel.ticker == ticker).first()
             )
             # TODO: load date between `last_fetch` and now.
-            if find_ticker:
+            if stock:
                 print(f"We already have data for {ticker}.")
                 return
-            ticker_data = self._fetcher.fetch(
+
+            # Load information about the stock.
+            stock_info = self._fetcher.fetch_stock_info(ticker)
+            session.add(
+                StockModel(
+                    ticker=ticker,
+                    name=stock_info.name,
+                    quote_type=stock_info.quote_type,
+                    description=stock_info.description,
+                )
+            )
+
+            # Now fetch all market data.
+            market_data = self._fetcher.fetch_market_data(
                 ticker,
                 self._config.history_start,
                 datetime.now().date(),
-                datetime.now() + timedelta(seconds=10),
             )
             # TODO: look into settings to optimize bulk adds
-            session.add(TickerModel(ticker=ticker))
-            for index, row in ticker_data.price_history.iterrows():
+            for day_data in market_data:
                 session.add(
                     PriceHistoryModel(
                         ticker=ticker,
-                        day=index.date(),
-                        open=row["Open"],
-                        close=row["Close"],
+                        day=day_data.day,
+                        open=day_data.open_price,
+                        close=day_data.close_price,
                     )
                 )
             session.commit()

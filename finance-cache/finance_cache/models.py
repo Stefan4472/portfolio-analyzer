@@ -9,13 +9,18 @@ class Base(DeclarativeBase):
     pass
 
 
-# TODO: track last_fetched_date, num_queries
-class TickerModel(Base):
-    __tablename__ = "ticker"
-    ticker: Mapped[str] = mapped_column(String(20), primary_key=True)
+class StockModel(Base):
+    """Information known about a single stock."""
+
+    __tablename__ = "stock"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ticker: Mapped[str] = mapped_column(String(20), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    quote_type: Mapped[str] = mapped_column(String(25))
+    description: Mapped[str] = mapped_column(String())
 
     def __repr__(self) -> str:
-        return f"Ticker({self.ticker})"
+        return f"Stock({self.ticker})"
 
 
 class PriceHistoryModel(Base):
